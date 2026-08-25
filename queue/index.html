@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>큐(Queue) 실습</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Noto Sans KR",Arial,sans-serif;background:#f5f7fb;color:#1f2937}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 40px}
+.header,.card{background:#fff;border-radius:22px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.header{padding:26px 28px;margin-bottom:20px}
+.header h1{margin:0 0 8px;font-size:30px}
+.header p{margin:4px 0;line-height:1.6;color:#4b5563}
+.rule{margin-top:14px;background:#ecfeff;border-left:5px solid #0891b2;padding:13px 16px;border-radius:12px;font-weight:800}
+.mode-row{margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{border:0;padding:10px 15px;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;transition:.15s}
+button:hover{transform:translateY(-1px)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.mode-btn{background:#e5e7eb;color:#374151;border-radius:999px}
+.mode-btn.active{background:#0891b2;color:#fff}
+.primary{background:#0891b2;color:#fff}.secondary{background:#e5e7eb;color:#111827}.enqueue{background:#dcfce7;color:#166534}.dequeue{background:#fee2e2;color:#991b1b}.hint{background:#fef3c7;color:#92400e}
+.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}}
+.card{padding:22px}
+h2{margin:0 0 14px;font-size:21px}
+.challenge-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:16px;margin-bottom:18px}
+.challenge-box h3{margin:0 0 8px;font-size:17px}
+.target{font-size:20px;font-weight:900;color:#0f766e;line-height:1.6}
+.input-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+input{padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;min-width:120px}
+.queue-wrap{padding:30px 0 20px}
+.queue-flow{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:10px}
+.queue-channel{min-width:0}
+.labels{display:flex;justify-content:space-between;font-weight:900;color:#475569;margin-bottom:8px}
+.queue{min-height:110px;border-top:6px solid #334155;border-bottom:6px solid #334155;padding:12px;display:flex;align-items:center;gap:8px;background:#fff;overflow-x:auto}
+.qitem{min-width:90px;padding:18px 12px;border-radius:11px;text-align:center;font-weight:900;background:#cffafe;color:#155e75;border:1px solid #67e8f9}
+.qitem.front{background:#fde68a;color:#92400e;border-color:#f59e0b}
+.empty{width:100%;text-align:center;color:#94a3b8;font-weight:800}
+.flow-arrow{position:relative;display:block;width:100%;height:4px;border-radius:999px;background:#64748b}
+.flow-arrow::before{content:"";position:absolute;left:-1px;top:50%;transform:translateY(-50%);border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:12px solid #64748b}
+@media(max-width:560px){.queue-flow{grid-template-columns:30px minmax(0,1fr) 30px;gap:7px}.flow-arrow{height:3px}.flow-arrow::before{border-top-width:6px;border-bottom-width:6px;border-right-width:9px}}
+.status{margin-top:14px;min-height:58px;border-radius:14px;padding:14px 16px;line-height:1.55;font-weight:800;background:#ecfeff;color:#155e75;border:1px solid #a5f3fc}
+.status.good{background:#ecfdf5;color:#166534;border-color:#bbf7d0}.status.bad{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.side{display:flex;flex-direction:column;gap:16px}
+.mini{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:16px}
+.mini h3{margin:0 0 10px;font-size:16px}
+.history{font-weight:800;line-height:1.7;max-height:190px;overflow:auto}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:22px;margin-top:4px}
+.finish{display:none;margin-top:16px;background:linear-gradient(135deg,#ecfeff,#f0fdfa);border:1px solid #99f6e4;border-radius:16px;padding:16px;text-align:center}
+.finish.show{display:block}.finish h3{margin:0 0 8px}.finish div{font-size:20px;font-weight:900;color:#0f766e}
+.small{font-size:13px;color:#64748b;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="header">
+<h1>큐(Queue) 실습</h1>
+<p>큐는 <b>먼저 들어온 데이터가 먼저 나가는</b> 자료구조입니다.</p>
+<p>직접 데이터를 넣고 빼면서 FIFO(First In, First Out) 원리를 확인해 보세요.</p>
+<div class="rule">핵심 규칙: <b>enqueue</b>는 REAR 쪽에 데이터를 넣고, <b>dequeue</b>는 FRONT 쪽의 데이터를 꺼냅니다.</div>
+<div class="mode-row">
+<b>실습 모드</b>
+<button id="practiceBtn" class="mode-btn active">연습 모드</button>
+<button id="challengeBtn" class="mode-btn">도전 모드</button>
+</div>
+</section>
+
+<div class="grid">
+<section class="card">
+<h2>큐 조작</h2>
+
+<div id="practicePanel" class="challenge-box">
+<h3>자유 실습</h3>
+<div class="small">원하는 값을 입력한 뒤 enqueue하거나, dequeue로 가장 먼저 들어온 데이터를 꺼내 보세요.</div>
+<div class="input-row">
+<input id="valueInput" maxlength="8" placeholder="예: A, 10, 학생1">
+<button id="enqueueFreeBtn" class="enqueue">enqueue</button>
+<button id="dequeueFreeBtn" class="dequeue">dequeue</button>
+<button id="clearBtn" class="secondary">초기화</button>
+</div>
+</div>
+
+<div id="challengePanel" class="challenge-box" style="display:none">
+<h3>도전 문제</h3>
+<div id="targetText" class="target"></div>
+<div class="small" style="margin-top:6px">현재 큐 상태를 보면서 올바른 enqueue/dequeue 동작을 직접 선택하세요.</div>
+<div class="input-row">
+<input id="challengeInput" maxlength="8" placeholder="enqueue할 값">
+<button id="enqueueChallengeBtn" class="enqueue">enqueue</button>
+<button id="dequeueChallengeBtn" class="dequeue">dequeue</button>
+<button id="hintBtn" class="hint">힌트</button>
+<button id="newBtn" class="primary">새 문제</button>
+</div>
+</div>
+
+<div class="queue-wrap">
+<div class="queue-flow" role="img" aria-label="자료가 오른쪽에서 왼쪽으로 이동하는 큐 구조">
+<span class="flow-arrow" aria-hidden="true"></span>
+<div class="queue-channel">
+<div class="labels"><span>FRONT</span><span>REAR</span></div>
+<div id="queue" class="queue"><div class="empty">비어 있음</div></div>
+</div>
+<span class="flow-arrow" aria-hidden="true"></span>
+</div>
+</div>
+
+<div id="status" class="status">값을 넣거나 빼면서 큐의 동작을 확인해 보세요.</div>
+<div id="finish" class="finish"><h3>🎉 성공!</h3><div>목표 큐 동작을 모두 수행했습니다.</div></div>
+</section>
+
+<aside class="card side">
+<div class="mini">
+<h3>현재 상태</h3>
+<div id="stateText" style="font-size:18px;font-weight:900;color:#0f766e">큐가 비어 있습니다.</div>
+</div>
+
+<div class="mini">
+<h3>조작 기록</h3>
+<div id="history" class="history">아직 조작 기록이 없습니다.</div>
+</div>
+
+<div class="mini">
+<h3>도전 기록</h3>
+<div class="stats">
+<div class="stat">정답 조작<b id="correctCnt">0</b></div>
+<div class="stat">오답 조작<b id="wrongCnt">0</b></div>
+</div>
+</div>
+
+<div class="mini">
+<h3>큐 핵심</h3>
+<div class="small">
+① 데이터는 REAR 쪽에 추가됩니다.<br>
+② 데이터는 FRONT 쪽에서 제거됩니다.<br>
+③ 가장 먼저 들어온 값이 가장 먼저 나옵니다.<br>
+④ 예: A → B → C 순서로 enqueue하면 dequeue 순서도 A → B → C입니다.
+</div>
+</div>
+</aside>
+</div>
+</div>
+
+<script>
+let mode="practice";
+let queue=[];
+let history=[];
+let correct=0, wrong=0;
+let challengeOps=[], step=0;
+let finished=false;
+
+const queueEl=document.getElementById("queue");
+const statusEl=document.getElementById("status");
+const historyEl=document.getElementById("history");
+const stateText=document.getElementById("stateText");
+const finishEl=document.getElementById("finish");
+const correctEl=document.getElementById("correctCnt");
+const wrongEl=document.getElementById("wrongCnt");
+
+function render(){
+  queueEl.innerHTML="";
+  if(!queue.length){
+    queueEl.innerHTML='<div class="empty">비어 있음</div>';
+    stateText.textContent="큐가 비어 있습니다.";
+  }else{
+    queue.forEach((v,i)=>{
+      const d=document.createElement("div");
+      d.className="qitem"+(i===0?" front":"");
+      d.textContent=v;
+      queueEl.appendChild(d);
+    });
+    stateText.textContent=`FRONT: ${queue[0]}  |  REAR: ${queue[queue.length-1]}  |  원소 수: ${queue.length}`;
+  }
+  historyEl.innerHTML=history.length?history.slice().reverse().map(x=>`• ${x}`).join("<br>"):"아직 조작 기록이 없습니다.";
+  correctEl.textContent=correct; wrongEl.textContent=wrong;
+}
+
+function setStatus(msg,type="info"){
+  statusEl.className="status"+(type==="good"?" good":type==="bad"?" bad":"");
+  statusEl.innerHTML=msg;
+}
+function freeEnqueue(){
+  const inp=document.getElementById("valueInput");
+  const v=inp.value.trim();
+  if(!v){setStatus("enqueue할 값을 입력하세요.","bad");return;}
+  queue.push(v);history.push(`enqueue(${v})`);
+  inp.value="";setStatus(`<b>${v}</b>을(를) REAR에 추가했습니다.`,"good");render();
+}
+function freeDequeue(){
+  if(!queue.length){setStatus("큐가 비어 있어 dequeue할 수 없습니다.","bad");return;}
+  const v=queue.shift();history.push(`dequeue() → ${v}`);
+  setStatus(`FRONT의 <b>${v}</b>을(를) 꺼냈습니다.`,"good");render();
+}
+function clearAll(){
+  queue=[];history=[];finishEl.classList.remove("show");render();setStatus("큐를 초기화했습니다.");
+}
+
+const challengeSets=[
+  [{t:"enqueue",v:"A"},{t:"enqueue",v:"B"},{t:"dequeue"},{t:"enqueue",v:"C"}],
+  [{t:"enqueue",v:"10"},{t:"enqueue",v:"20"},{t:"enqueue",v:"30"},{t:"dequeue"},{t:"dequeue"}],
+  [{t:"enqueue",v:"학생1"},{t:"enqueue",v:"학생2"},{t:"dequeue"},{t:"enqueue",v:"학생3"},{t:"dequeue"}],
+  [{t:"enqueue",v:"1"},{t:"enqueue",v:"2"},{t:"dequeue"},{t:"enqueue",v:"3"},{t:"enqueue",v:"4"}]
+];
+
+function opsToText(ops){
+  return ops.map(o=>o.t==="enqueue"?`enqueue(${o.v})`:"dequeue()").join(" → ");
+}
+function newChallenge(){
+  queue=[];history=[];correct=0;wrong=0;step=0;finished=false;finishEl.classList.remove("show");
+  challengeOps=challengeSets[Math.floor(Math.random()*challengeSets.length)];
+  document.getElementById("targetText").textContent="목표 동작: "+opsToText(challengeOps);
+  document.getElementById("challengeInput").value="";
+  setStatus("첫 번째 동작부터 순서대로 수행하세요.");
+  render();
+}
+function expected(){return challengeOps[step]||null;}
+function challengeEnqueue(){
+  if(finished)return;
+  const inp=document.getElementById("challengeInput");
+  const v=inp.value.trim();
+  const e=expected();
+  if(!v){setStatus("enqueue할 값을 입력하세요.","bad");return;}
+  if(!e || e.t!=="enqueue" || e.v!==v){
+    wrong++;setStatus(`지금은 <b>enqueue(${v})</b> 동작이 아닙니다. 목표 동작 순서를 다시 확인하세요.`,"bad");render();return;
+  }
+  queue.push(v);history.push(`enqueue(${v})`);correct++;step++;inp.value="";
+  setStatus(`<b>enqueue(${v})</b> 성공!`,"good");render();checkDone();
+}
+function challengeDequeue(){
+  if(finished)return;
+  const e=expected();
+  if(!e || e.t!=="dequeue"){
+    wrong++;setStatus("지금은 dequeue할 차례가 아닙니다.","bad");render();return;
+  }
+  if(!queue.length){
+    wrong++;setStatus("현재 큐가 비어 있어 dequeue할 수 없습니다.","bad");render();return;
+  }
+  const v=queue.shift();history.push(`dequeue() → ${v}`);correct++;step++;
+  setStatus(`FRONT의 <b>${v}</b>을(를) dequeue했습니다.`,"good");render();checkDone();
+}
+function checkDone(){
+  if(step>=challengeOps.length){
+    finished=true;finishEl.classList.add("show");setStatus("모든 동작을 올바르게 수행했습니다!","good");
+  }
+}
+function hint(){
+  const e=expected();
+  if(!e){setStatus("모든 동작을 완료했습니다.");return;}
+  setStatus(e.t==="enqueue"?`힌트: 다음 동작은 <b>enqueue(${e.v})</b>입니다.`:"힌트: 다음 동작은 <b>dequeue()</b>입니다.");
+}
+function setMode(m){
+  mode=m;
+  document.getElementById("practiceBtn").classList.toggle("active",m==="practice");
+  document.getElementById("challengeBtn").classList.toggle("active",m==="challenge");
+  document.getElementById("practicePanel").style.display=m==="practice"?"block":"none";
+  document.getElementById("challengePanel").style.display=m==="challenge"?"block":"none";
+  queue=[];history=[];correct=0;wrong=0;finishEl.classList.remove("show");
+  if(m==="practice"){render();setStatus("값을 넣거나 빼면서 큐의 동작을 확인해 보세요.");}
+  else newChallenge();
+}
+document.getElementById("practiceBtn").onclick=()=>setMode("practice");
+document.getElementById("challengeBtn").onclick=()=>setMode("challenge");
+document.getElementById("enqueueFreeBtn").onclick=freeEnqueue;
+document.getElementById("dequeueFreeBtn").onclick=freeDequeue;
+document.getElementById("clearBtn").onclick=clearAll;
+document.getElementById("enqueueChallengeBtn").onclick=challengeEnqueue;
+document.getElementById("dequeueChallengeBtn").onclick=challengeDequeue;
+document.getElementById("hintBtn").onclick=hint;
+document.getElementById("newBtn").onclick=newChallenge;
+document.getElementById("valueInput").addEventListener("keydown",e=>{if(e.key==="Enter")freeEnqueue()});
+document.getElementById("challengeInput").addEventListener("keydown",e=>{if(e.key==="Enter")challengeEnqueue()});
+render();
+</script>
+</body>
+</html>
