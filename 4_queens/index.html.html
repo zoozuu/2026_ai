@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>4-Queen 탐색 트리 만들기</title>
+  <style>
+    :root{color-scheme:light dark}
+    body{margin:0;background:#f5f6f8;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    @media(prefers-color-scheme:dark){body{background:#121419}}
+  </style>
+</head>
+<body>
+<div id="queen-tree-app" class="qt-root">
+<style>
+#queen-tree-app{background:light-dark(#f5f6f8,#121419);color:light-dark(#202634,#f1f3f8);border-radius:0;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:720px}
+#queen-tree-app *{box-sizing:border-box}
+#queen-tree-app .intro{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+#queen-tree-app h2{margin:0 0 7px;font-size:24px;letter-spacing:-.03em}
+#queen-tree-app .intro p{margin:0;max-width:820px;line-height:1.55;color:light-dark(#646d7d,#aeb6c5);font-size:14px}
+#queen-tree-app .stage{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+#queen-tree-app .panel{background:light-dark(#fff,#1a1e25);border:1px solid light-dark(#dee2e9,#303640);border-radius:16px;padding:16px}
+#queen-tree-app .label{font-size:14px;font-weight:800;margin-bottom:12px}
+#queen-tree-app .board-holder{display:flex;justify-content:center;margin:4px 0 14px}
+#queen-tree-app .main-board{display:grid;grid-template-columns:repeat(4,56px);grid-template-rows:repeat(4,56px);border:2px solid light-dark(#919bab,#7f8999);border-radius:8px;overflow:hidden}
+#queen-tree-app .square{width:56px;height:56px;border:0;border-radius:0;padding:0;display:flex;align-items:center;justify-content:center;font-size:33px;cursor:pointer;position:relative;color:#283e75}
+#queen-tree-app .square.a{background:#dbe9e5}
+#queen-tree-app .square.b{background:#8daec5}
+#queen-tree-app .square.next-row{box-shadow:inset 0 0 0 3px rgba(255,176,32,.62)}
+#queen-tree-app .square.possible::after{content:'';width:12px;height:12px;border-radius:50%;background:rgba(25,142,87,.65);position:absolute;bottom:5px;right:5px}
+#queen-tree-app .square.blocked::after{content:'×';position:absolute;right:5px;bottom:0;font-size:17px;font-weight:900;color:rgba(179,49,49,.78)}
+#queen-tree-app .square.dead-row{box-shadow:inset 0 0 0 3px rgba(210,55,55,.62)}
+#queen-tree-app .square:focus-visible{outline:4px solid #ffb020;outline-offset:-4px;z-index:2}
+#queen-tree-app .square:not(.next-row){cursor:default}
+#queen-tree-app .status{padding:11px 12px;border-radius:11px;background:light-dark(#f1f3f6,#252a33);font-size:13px;line-height:1.55;min-height:66px}
+#queen-tree-app .status.good{border-left:4px solid #319565}
+#queen-tree-app .status.warn{border-left:4px solid #df6262}
+#queen-tree-app .status.goal{border:2px solid #f0a000;background:light-dark(#fff8e8,#332a19);padding:14px}
+#queen-tree-app .status.dead{border:2px solid #df6262;background:light-dark(#fff0f0,#342124);padding:14px}
+#queen-tree-app .status.dead strong{display:block;font-size:16px;color:light-dark(#bb2f38,#ff9ea4);margin-bottom:5px}
+#queen-tree-app .status.goal strong{display:block;font-size:17px;color:light-dark(#b46f00,#ffc45c);margin-bottom:5px}
+#queen-tree-app .route{margin-top:11px;padding:10px 12px;border:1px dashed light-dark(#c6ccd6,#414957);border-radius:11px;font-size:13px;line-height:1.55}
+#queen-tree-app .route strong{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+#queen-tree-app .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+#queen-tree-app .control{min-height:44px;border:0;border-radius:10px;padding:0 13px;font-weight:800;font-size:13px;cursor:pointer;background:light-dark(#293449,#e9edf4);color:light-dark(#fff,#171b22)}
+#queen-tree-app .control.secondary{background:light-dark(#e8ebf0,#2b313b);color:light-dark(#283247,#eff2f7)}
+#queen-tree-app .control.back-needed{background:#d94d55;color:#fff;animation:qtPulse 1.2s ease-in-out infinite}
+#queen-tree-app .control:disabled{opacity:.4;cursor:not-allowed}
+#queen-tree-app .key{margin-top:12px;color:light-dark(#6e7685,#a4adbc);font-size:12px;line-height:1.5}
+#queen-tree-app .legend{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:light-dark(#687181,#aeb6c4)}
+#queen-tree-app .legend span{display:flex;align-items:center;gap:6px}
+#queen-tree-app .legend i{display:block;width:11px;height:11px;border-radius:3px}
+#queen-tree-app .tree-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+#queen-tree-app .tree-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#queen-tree-app .zoom-hint{font-size:12px;color:light-dark(#6b7484,#aab3c2)}
+#queen-tree-app .capture-btn,#queen-tree-app .check-tree-btn{min-height:40px;border:0;border-radius:10px;padding:0 13px;font-weight:850;font-size:13px;cursor:pointer;color:#fff}
+#queen-tree-app .capture-btn{background:#315fbd}
+#queen-tree-app .check-tree-btn{background:#2f875d}
+#queen-tree-app .capture-btn:disabled,#queen-tree-app .check-tree-btn:disabled{opacity:.55;cursor:not-allowed}
+#queen-tree-app .capture-message{display:none;margin:0 0 10px;padding:11px 12px;border-radius:10px;font-size:13px;font-weight:800;line-height:1.45}
+#queen-tree-app .capture-message.show{display:block}
+#queen-tree-app .capture-message.success{background:#e9f7ef;color:#187342;border:1px solid #99d4ad}
+#queen-tree-app .capture-message.error{background:#fff0f0;color:#a52f37;border:1px solid #efb0b4}
+#queen-tree-app .tree-scroll{position:relative;overflow:hidden;width:100%;height:560px;border:1px solid light-dark(#e0e4ea,#2b313a);border-radius:13px;background:light-dark(#f8f9fb,#15191f);cursor:grab;touch-action:none;user-select:none}
+#queen-tree-app .tree-scroll.dragging{cursor:grabbing}
+#queen-tree-app .tree-canvas{position:absolute;left:0;top:0;width:1000px;height:610px;min-width:1000px;transform-origin:0 0;will-change:transform}
+#queen-tree-app .lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#queen-tree-app .tree-node{position:absolute;width:92px;transform:translate(-50%,-50%);text-align:center;z-index:2}
+#queen-tree-app .node-board{margin:auto;width:78px;height:78px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);border:2px solid light-dark(#d1d6df,#56606e);background:#fff;border-radius:6px;overflow:hidden;transition:box-shadow .15s,border-color .15s}
+#queen-tree-app .tree-node.current .node-board{border:4px solid #f0a000;box-shadow:0 0 0 3px rgba(240,160,0,.14)}
+#queen-tree-app .tree-node.goal .node-board{border-color:#f0a000}
+#queen-tree-app .tree-node.dead .node-board{border:4px solid #d94d55;box-shadow:0 0 0 3px rgba(217,77,85,.12)}
+#queen-tree-app .mini{display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;color:#294075}
+#queen-tree-app .mini.a{background:#dbe9e5}
+#queen-tree-app .mini.b{background:#8daec5}
+#queen-tree-app .node-caption{font-size:10px;margin-top:4px;font-weight:750;white-space:nowrap;color:light-dark(#555f70,#b6beca)}
+#queen-tree-app .start-tag,#queen-tree-app .goal-tag,#queen-tree-app .dead-tag{position:absolute;left:50%;transform:translateX(-50%);padding:5px 11px;font-size:11px;font-weight:850;border-radius:6px;color:white;white-space:nowrap}
+#queen-tree-app .start-tag{top:-27px;background:#249954}
+#queen-tree-app .goal-tag{top:91px;background:#ed9900}
+#queen-tree-app .dead-tag{top:91px;background:#d94d55}
+#queen-tree-app .tree-empty{position:absolute;left:50%;top:160px;transform:translateX(-50%);font-size:13px;color:light-dark(#8a919c,#78818e);pointer-events:none}
+#queen-tree-app .stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#queen-tree-app .chip{padding:7px 10px;border-radius:999px;background:light-dark(#edf0f4,#242a33);font-size:12px;font-weight:700}
+@keyframes qtPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@media(prefers-reduced-motion:reduce){#queen-tree-app .control.back-needed{animation:none}}
+@media(max-width:800px){#queen-tree-app{padding:14px}#queen-tree-app .stage{grid-template-columns:1fr}#queen-tree-app .tree-scroll{height:510px}}
+@media(max-width:360px){#queen-tree-app .main-board{grid-template-columns:repeat(4,52px);grid-template-rows:repeat(4,52px)}#queen-tree-app .square{width:52px;height:52px}}
+</style>
+
+<div class="intro">
+  <div>
+    <h2>4-Queen 탐색 트리</h2>
+    <p>주황색으로 표시된 행에서 칸을 선택하세요. 퀸을 놓을 수 있는 위치라면 새로운 상태가 탐색 트리에 추가됩니다. 더 이상 놓을 수 있는 위치가 없으면 막힌 상태를 알려줍니다.</p>
+  </div>
+</div>
+
+<div class="stage">
+  <section class="panel">
+    <div class="label">직접 퀸 배치하기</div>
+    <div class="board-holder"><div class="main-board" id="mainBoard" aria-label="4 Queen 체스판"></div></div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="route">현재 상태<br><strong id="routeText">초기 상태 []</strong></div>
+    <div class="controls">
+      <button class="control" type="button" id="backBtn">↩ 한 단계 되돌리기</button>
+      <button class="control secondary" type="button" id="resetBtn">처음부터 다시</button>
+    </div>
+    <div class="stats">
+      <span class="chip">생성한 상태 <b id="nodeCount">1</b>개</span>
+      <span class="chip">막힌 상태 <b id="deadCount">0</b>개</span>
+      <span class="chip">찾은 목표 <b id="goalCount">0</b>개</span>
+    </div>
+    <div class="key">● 초록 점: 놓을 수 있는 칸<br>× 빨간 표시: 다른 퀸과 충돌하는 칸<br>주황색 테두리: 현재 선택해야 하는 행<br>빨간색 상태: 다음 행에 더 이상 퀸을 놓을 수 없는 최종 노드</div>
+  </section>
+
+  <section class="panel">
+    <div class="tree-toolbar">
+      <div>
+        <div class="label" style="margin-bottom:3px">내가 만든 탐색 트리</div>
+        <div class="zoom-hint">Ctrl + 마우스 휠: 확대·축소 · 빈 공간 드래그: 이동</div>
+      </div>
+      <div class="tree-tools">
+        <button class="check-tree-btn" type="button" id="checkTreeBtn" title="모든 최종 탐색 가지를 찾았는지 확인합니다">✓ 탐색 트리 완성 확인</button>
+        <button class="capture-btn" type="button" id="captureBtn">📷 탐색 트리 캡처</button>
+      </div>
+    </div>
+    <div class="capture-message" id="captureMessage" aria-live="polite"></div>
+    <div class="legend">
+      <span><i style="background:#249954"></i>초기 상태</span>
+      <span><i style="background:#8daec5"></i>탐색 상태</span>
+      <span><i style="background:#d94d55"></i>해결 불가</span>
+      <span><i style="background:#ed9900"></i>현재/목표 상태</span>
+    </div>
+    <div class="tree-scroll" id="treeScroll">
+      <div class="tree-canvas" id="treeCanvas">
+        <svg class="lines" id="lineSvg" viewBox="0 0 1000 570" preserveAspectRatio="none"></svg>
+        <div class="tree-empty" id="treeHint">체스판의 첫 번째 행에서 퀸을 놓아 보세요.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(()=>{
+ const app=document.getElementById('queen-tree-app');
+ if(app.dataset.ready)return; app.dataset.ready='1';
+ const board=app.querySelector('#mainBoard');
+ const status=app.querySelector('#status');
+ const routeText=app.querySelector('#routeText');
+ const backBtn=app.querySelector('#backBtn');
+ const resetBtn=app.querySelector('#resetBtn');
+ const treeCanvas=app.querySelector('#treeCanvas');
+ const treeScroll=app.querySelector('#treeScroll');
+ const lineSvg=app.querySelector('#lineSvg');
+ const treeHint=app.querySelector('#treeHint');
+ const nodeCountEl=app.querySelector('#nodeCount');
+ const deadCountEl=app.querySelector('#deadCount');
+ const goalCountEl=app.querySelector('#goalCount');
+ const checkTreeBtn=app.querySelector('#checkTreeBtn');
+ const captureBtn=app.querySelector('#captureBtn');
+ const captureMessage=app.querySelector('#captureMessage');
+ const NS='http://www.w3.org/2000/svg';
+ let seq=1;
+ let nodes=[];
+ let currentId=0;
+ let zoomScale=1;
+ let panX=0;
+ let panY=0;
+ let treeWidth=1000;
+ let treeHeight=610;
+ let zoomInitialized=false;
+ let lastLayout=null;
+ let dragState=null;
+
+ function safe(path,col){
+   const row=path.length;
+   for(let r=0;r<path.length;r++){
+     if(path[r]===col)return false;
+     if(Math.abs(path[r]-col)===Math.abs(r-row))return false;
+   }
+   return true;
+ }
+ function availableCols(path){
+   if(path.length>=4)return [];
+   return [1,2,3,4].filter(col=>safe(path,col));
+ }
+ function isTerminalDead(path){
+   return path.length>0 && path.length<4 && availableCols(path).length===0;
+ }
+ function childForColumn(node,col){
+   return nodes.find(x=>x.parent===node.id && x.path[x.path.length-1]===col);
+ }
+ function recomputeDeadStatuses(){
+   // '해결 불가'는 실제로 다음 행에 놓을 수 있는 칸이 하나도 없는
+   // 최종 막힘 노드에만 표시합니다. 상위 노드로 상태를 전파하지 않습니다.
+   nodes.forEach(n=>{
+     if(n.goal || n.id===0){
+       n.dead=false;
+       n.deadKind=null;
+       return;
+     }
+     if(isTerminalDead(n.path)){
+       n.dead=true;
+       n.deadKind='terminal';
+     }else{
+       n.dead=false;
+       n.deadKind=null;
+     }
+   });
+ }
+ function fresh(){
+   seq=1;
+   nodes=[{id:0,parent:null,path:[],depth:0,goal:false,dead:false,deadKind:null,order:0}];
+   currentId=0;
+   zoomInitialized=false;
+   zoomScale=1;
+   panX=0;
+   panY=0;
+   hideCaptureMessage();
+   renderAll('첫 번째 행에서 퀸을 놓을 칸을 선택하세요.');
+ }
+ function cur(){return nodes.find(n=>n.id===currentId);}
+ function reason(path,col){
+   const row=path.length;
+   for(let r=0;r<path.length;r++){
+     if(path[r]===col)return `${r+1}행의 퀸과 같은 ${col}열입니다.`;
+     if(Math.abs(path[r]-col)===Math.abs(r-row))return `${r+1}행 ${path[r]}열의 퀸과 대각선으로 만납니다.`;
+   }
+   return '';
+ }
+ function deadMessage(n){
+   return '<strong>더 이상 해결불가! 다른 방안을 찾아야할 것 같아요.</strong>다음 행에는 퀸을 놓을 수 있는 칸이 하나도 없습니다.<br>한 단계 되돌아가서 다른 위치를 선택해 보세요.';
+ }
+ function showCurrentNodeStatus(fallback){
+   const n=cur();
+   if(n.goal){
+     renderAll(`<strong>🎉 목표 상태 도달!</strong>[${n.path.join(', ')}]에 4개의 퀸을 모두 배치했습니다.`,'goal',true);
+   }else if(n.dead){
+     renderAll(deadMessage(n),'dead',true);
+   }else{
+     renderAll(fallback || '탐색을 계속해 보세요.');
+   }
+ }
+ function selectCell(row,col){
+   hideCaptureMessage();
+   const n=cur();
+   const nextRow=n.path.length+1;
+   if(row!==nextRow || nextRow>4)return;
+   if(!safe(n.path,col)){
+     renderBoard();
+     status.className='status warn';
+     status.innerHTML=`<b>${row}행 ${col}열에는 놓을 수 없습니다.</b><br>${reason(n.path,col)}`;
+     const sq=board.querySelector(`[data-r="${row}"][data-c="${col}"]`);
+     if(sq && sq.animate)sq.animate([{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],{duration:180});
+     return;
+   }
+   const nextPath=n.path.concat(col);
+   let child=nodes.find(x=>x.parent===n.id && x.path.join(',')===nextPath.join(','));
+   if(!child){
+     child={id:seq++,parent:n.id,path:nextPath,depth:nextPath.length,goal:nextPath.length===4,dead:false,deadKind:null,order:nodes.length};
+     nodes.push(child);
+   }
+   currentId=child.id;
+   recomputeDeadStatuses();
+   if(child.goal){
+     renderAll(`<strong>🎉 목표 상태 도달!</strong>[${child.path.join(', ')}]에 4개의 퀸을 모두 배치했습니다.`,'goal',true);
+   }else if(child.dead){
+     renderAll(deadMessage(child),'dead',true);
+   }else{
+     renderAll(`${row}행 ${col}열에 퀸을 놓았습니다. 이제 ${row+1}행을 선택하세요.`,'good');
+   }
+   setTimeout(scrollCurrentIntoView,30);
+ }
+ function renderBoard(){
+   board.innerHTML='';
+   const n=cur();
+   const path=n.path;
+   const nextRow=path.length+1;
+   for(let r=1;r<=4;r++){
+     for(let c=1;c<=4;c++){
+       const b=document.createElement('button');
+       b.type='button'; b.className='square '+(((r+c)%2===0)?'a':'b');
+       b.dataset.r=r;b.dataset.c=c;
+       b.setAttribute('aria-label',`${r}행 ${c}열`);
+       if(path[r-1]===c){
+         b.textContent='♛';b.disabled=true;
+       }else if(r===nextRow && nextRow<=4){
+         b.classList.add('next-row');
+         if(n.deadKind==='terminal')b.classList.add('dead-row');
+         if(safe(path,c)){
+           b.classList.add('possible');
+           b.addEventListener('click',()=>selectCell(r,c));
+         }else{
+           b.classList.add('blocked');
+           b.addEventListener('click',()=>selectCell(r,c));
+         }
+       }else{
+         b.disabled=true;
+       }
+       board.appendChild(b);
+     }
+   }
+ }
+ function layoutTree(){
+   const positions=new Map();
+   const levels=[0,1,2,3,4];
+   const W=Math.max(1000,Math.max(...levels.map(d=>nodes.filter(n=>n.depth===d).length))*150+120);
+   const H=610;
+   treeWidth=W;
+   treeHeight=H;
+   treeCanvas.style.width=W+'px';
+   treeCanvas.style.height=H+'px';
+   lineSvg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+   levels.forEach(d=>{
+     const levelNodes=nodes.filter(n=>n.depth===d).sort((a,b)=>a.order-b.order);
+     const gap=W/(levelNodes.length+1);
+     levelNodes.forEach((n,i)=>positions.set(n.id,{x:gap*(i+1),y:62+d*112}));
+   });
+   lastLayout={positions,W,H};
+   return lastLayout;
+ }
+ function miniBoard(path){
+   const box=document.createElement('div');box.className='node-board';
+   for(let r=1;r<=4;r++)for(let c=1;c<=4;c++){
+     const s=document.createElement('div');s.className='mini '+(((r+c)%2===0)?'a':'b');
+     if(path[r-1]===c)s.textContent='♛';box.appendChild(s);
+   }
+   return box;
+ }
+ function renderTree(){
+   recomputeDeadStatuses();
+   treeCanvas.querySelectorAll('.tree-node').forEach(e=>e.remove());
+   lineSvg.innerHTML='';
+   const {positions}=layoutTree();
+   nodes.forEach(n=>{
+     if(n.parent!==null){
+       const p=positions.get(n.parent),q=positions.get(n.id);
+       const line=document.createElementNS(NS,'path');
+       const y1=p.y+39,y2=q.y-39,mid=(y1+y2)/2;
+       line.setAttribute('d',`M ${p.x} ${y1} C ${p.x} ${mid}, ${q.x} ${mid}, ${q.x} ${y2}`);
+       line.setAttribute('fill','none');
+       let stroke='#8c9db7';
+       let width='1.6';
+       if(n.dead)stroke='#d94d55';
+       if(n.id===currentId){stroke=n.dead?'#d94d55':'#ed9900';width='3';}
+       line.setAttribute('stroke',stroke);
+       line.setAttribute('stroke-width',width);
+       line.setAttribute('opacity',n.id===currentId?'1':'.8');
+       lineSvg.appendChild(line);
+     }
+   });
+   nodes.forEach(n=>{
+     const pos=positions.get(n.id);
+     const el=document.createElement('div');
+     el.className='tree-node'+(n.id===currentId?' current':'')+(n.goal?' goal':'')+(n.dead?' dead':'');
+     el.dataset.node=n.id;el.style.left=pos.x+'px';el.style.top=pos.y+'px';
+     if(n.id===0){const tag=document.createElement('div');tag.className='start-tag';tag.textContent='초기 상태';el.appendChild(tag);}
+     el.appendChild(miniBoard(n.path));
+     const cap=document.createElement('div');cap.className='node-caption';cap.textContent=n.path.length?'['+n.path.join(', ')+']':'[ ]';el.appendChild(cap);
+     if(n.goal){
+       const tag=document.createElement('div');tag.className='goal-tag';tag.textContent='목표 상태 도달!';el.appendChild(tag);
+     }else if(n.dead){
+       const tag=document.createElement('div');tag.className='dead-tag';
+       tag.textContent='해결 불가';
+       tag.title='다음 행에 놓을 수 있는 칸이 없어 탐색이 끝난 최종 노드';
+       el.appendChild(tag);
+     }
+     el.addEventListener('click',()=>{
+       currentId=n.id;
+       showCurrentNodeStatus('탐색 트리에서 이전에 만든 상태를 선택했습니다.');
+     });
+     treeCanvas.appendChild(el);
+   });
+   treeHint.style.display=nodes.length>1?'none':'block';
+   nodeCountEl.textContent=nodes.length;
+   deadCountEl.textContent=nodes.filter(n=>n.dead).length;
+   goalCountEl.textContent=nodes.filter(n=>n.goal).length;
+   if(!zoomInitialized){
+     requestAnimationFrame(()=>{
+       fitTreeToView();
+       zoomInitialized=true;
+     });
+   }else{
+     applyTreeTransform();
+   }
+ }
+ function renderAll(message,type,htmlMessage){
+   recomputeDeadStatuses();
+   renderBoard();renderTree();
+   const n=cur();
+   routeText.textContent=n.path.length?`[${n.path.join(', ')}]`:'초기 상태 []';
+   backBtn.disabled=n.parent===null;
+   backBtn.classList.toggle('back-needed',!!n.dead);
+   status.className='status'+(type?' '+type:'');
+   if(htmlMessage)status.innerHTML=message;
+   else status.textContent=message;
+ }
+ function clamp(v,min,max){return Math.min(max,Math.max(min,v));}
+ function applyTreeTransform(){
+   treeCanvas.style.transform=`translate(${panX}px,${panY}px) scale(${zoomScale})`;
+ }
+ function fitTreeToView(){
+   const vw=Math.max(320,treeScroll.clientWidth);
+   const vh=Math.max(360,treeScroll.clientHeight);
+   const pad=24;
+   const sx=(vw-pad*2)/treeWidth;
+   const sy=(vh-pad*2)/treeHeight;
+   zoomScale=clamp(Math.min(1,sx,sy),0.3,2.2);
+   panX=(vw-treeWidth*zoomScale)/2;
+   panY=(vh-treeHeight*zoomScale)/2;
+   applyTreeTransform();
+ }
+ function scrollCurrentIntoView(){
+   const el=treeCanvas.querySelector(`[data-node="${currentId}"]`);
+   if(!el)return;
+   const vw=treeScroll.clientWidth;
+   const vh=treeScroll.clientHeight;
+   panX=vw/2-el.offsetLeft*zoomScale;
+   panY=vh/2-el.offsetTop*zoomScale;
+   applyTreeTransform();
+ }
+ function pathKey(path){
+   return path.length ? path.join(',') : 'ROOT';
+ }
+ function buildExpectedTerminalPaths(){
+   const leaves=[];
+   function visit(path){
+     if(path.length===4){
+       leaves.push({path:path.slice(),type:'goal'});
+       return;
+     }
+     const cols=availableCols(path);
+     if(path.length>0 && cols.length===0){
+       leaves.push({path:path.slice(),type:'dead'});
+       return;
+     }
+     for(const col of cols){
+       visit(path.concat(col));
+     }
+   }
+   visit([]);
+   return leaves;
+ }
+ function checkTreeCompletion(){
+   recomputeDeadStatuses();
+
+   // 탐색 트리의 '완성'은 모든 최종 가지를 실제로 한 번 이상 찾아본 것으로 판정합니다.
+   // 4-Queen에서는 해결 불가 최종 노드 4개 + 목표 상태 2개 = 총 6개입니다.
+   const expectedLeaves=buildExpectedTerminalPaths();
+   const made=new Set(nodes.map(n=>pathKey(n.path)));
+   const found=expectedLeaves.filter(item=>made.has(pathKey(item.path)));
+   const missing=expectedLeaves.filter(item=>!made.has(pathKey(item.path)));
+
+   const totalGoals=expectedLeaves.filter(item=>item.type==='goal').length;
+   const totalDead=expectedLeaves.filter(item=>item.type==='dead').length;
+   const foundGoals=found.filter(item=>item.type==='goal').length;
+   const foundDead=found.filter(item=>item.type==='dead').length;
+
+   if(missing.length===0){
+     showCaptureMessage(
+       `🎉 탐색 트리 완성! 모든 최종 탐색 경우를 찾았습니다. 목표 상태 ${totalGoals}개와 해결 불가 최종 노드 ${totalDead}개를 모두 확인했어요.`,
+       true
+     );
+     return;
+   }
+
+   showCaptureMessage(
+     `아직 탐색 트리가 완성되지 않았어요. 최종 탐색 경우 ${found.length}/${expectedLeaves.length}개를 찾았습니다. ` +
+     `(목표 ${foundGoals}/${totalGoals}, 해결 불가 ${foundDead}/${totalDead}) 이전 단계로 돌아가 아직 확인하지 않은 가지를 찾아보세요.`,
+     false
+   );
+ }
+ function hideCaptureMessage(){
+   captureMessage.className='capture-message';
+   captureMessage.textContent='';
+ }
+ function showCaptureMessage(text,ok){
+   captureMessage.textContent=text;
+   captureMessage.className='capture-message show '+(ok?'success':'error');
+ }
+ function roundRectPath(ctx,x,y,w,h,r){
+   const rr=Math.min(r,w/2,h/2);
+   ctx.beginPath();
+   ctx.moveTo(x+rr,y);
+   ctx.arcTo(x+w,y,x+w,y+h,rr);
+   ctx.arcTo(x+w,y+h,x,y+h,rr);
+   ctx.arcTo(x,y+h,x,y,rr);
+   ctx.arcTo(x,y,x+w,y,rr);
+   ctx.closePath();
+ }
+ function drawTag(ctx,text,cx,y,bg){
+   ctx.font='800 12px system-ui, sans-serif';
+   const tw=ctx.measureText(text).width;
+   const w=tw+22,h=25,x=cx-w/2;
+   ctx.fillStyle=bg;
+   roundRectPath(ctx,x,y,w,h,6);
+   ctx.fill();
+   ctx.fillStyle='#ffffff';
+   ctx.textAlign='center';
+   ctx.textBaseline='middle';
+   ctx.fillText(text,cx,y+h/2+.5);
+ }
+ function drawMiniBoard(ctx,node,cx,cy){
+   const size=78;
+   const cell=size/4;
+   const x=cx-size/2,y=cy-size/2;
+   const light='#dbe9e5',dark='#8daec5';
+   for(let r=0;r<4;r++){
+     for(let c=0;c<4;c++){
+       ctx.fillStyle=((r+c)%2===0)?light:dark;
+       ctx.fillRect(x+c*cell,y+r*cell,cell,cell);
+     }
+   }
+   ctx.fillStyle='#294075';
+   ctx.textAlign='center';
+   ctx.textBaseline='middle';
+   ctx.font='20px "Segoe UI Symbol","Arial Unicode MS",serif';
+   node.path.forEach((col,r)=>{
+     ctx.fillText('♛',x+(col-.5)*cell,y+(r+.5)*cell+1);
+   });
+   let stroke='#7f8999',lw=2;
+   if(node.dead){stroke='#d94d55';lw=4;}
+   else if(node.id===currentId || node.goal){stroke='#ed9900';lw=4;}
+   ctx.strokeStyle=stroke;
+   ctx.lineWidth=lw;
+   roundRectPath(ctx,x,y,size,size,6);
+   ctx.stroke();
+ }
+ function renderCaptureCanvas(){
+   if(!lastLayout) layoutTree();
+   const {positions,W,H}=lastLayout;
+   const margin=54;
+   const outputScale=2;
+   const canvas=document.createElement('canvas');
+   canvas.width=Math.ceil((W+margin*2)*outputScale);
+   canvas.height=Math.ceil((H+margin*2)*outputScale);
+   const ctx=canvas.getContext('2d');
+   ctx.scale(outputScale,outputScale);
+   ctx.fillStyle='#ffffff';
+   ctx.fillRect(0,0,W+margin*2,H+margin*2);
+   ctx.save();
+   ctx.translate(margin,margin);
+
+   nodes.forEach(n=>{
+     if(n.parent===null)return;
+     const p=positions.get(n.parent),q=positions.get(n.id);
+     if(!p||!q)return;
+     const y1=p.y+39,y2=q.y-39,mid=(y1+y2)/2;
+     ctx.beginPath();
+     ctx.moveTo(p.x,y1);
+     ctx.bezierCurveTo(p.x,mid,q.x,mid,q.x,y2);
+     ctx.strokeStyle=n.dead?'#d94d55':(n.id===currentId?'#ed9900':'#8c9db7');
+     ctx.lineWidth=n.id===currentId?3:1.8;
+     ctx.stroke();
+   });
+
+   nodes.forEach(n=>{
+     const p=positions.get(n.id);
+     if(!p)return;
+     drawMiniBoard(ctx,n,p.x,p.y);
+     ctx.fillStyle='#555f70';
+     ctx.font='700 11px system-ui, sans-serif';
+     ctx.textAlign='center';
+     ctx.textBaseline='top';
+     ctx.fillText(n.path.length?'['+n.path.join(', ')+']':'[ ]',p.x,p.y+43);
+
+     if(n.id===0)drawTag(ctx,'초기 상태',p.x,p.y-67,'#249954');
+     if(n.goal)drawTag(ctx,'목표 상태 도달!',p.x,p.y+52,'#ed9900');
+     else if(n.dead)drawTag(ctx,'해결 불가',p.x,p.y+52,'#d94d55');
+   });
+   ctx.restore();
+   return canvas;
+ }
+ async function copyCanvasToClipboard(canvas){
+   const blob=await new Promise((resolve,reject)=>{
+     canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG 생성 실패')),'image/png');
+   });
+
+   if(navigator.clipboard && window.ClipboardItem){
+     try{
+       await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+       return true;
+     }catch(err){}
+   }
+
+   // file:// 환경 등에서 Clipboard API가 제한될 때를 위한 호환 방식
+   try{
+     const holder=document.createElement('div');
+     holder.contentEditable='true';
+     holder.setAttribute('aria-hidden','true');
+     holder.style.position='fixed';
+     holder.style.left='-10000px';
+     holder.style.top='0';
+     const img=document.createElement('img');
+     img.src=canvas.toDataURL('image/png');
+     holder.appendChild(img);
+     document.body.appendChild(holder);
+     const range=document.createRange();
+     range.selectNodeContents(holder);
+     const sel=window.getSelection();
+     sel.removeAllRanges();
+     sel.addRange(range);
+     const ok=document.execCommand && document.execCommand('copy');
+     sel.removeAllRanges();
+     holder.remove();
+     if(ok)return true;
+   }catch(err){}
+   return false;
+ }
+ async function captureTree(){
+   hideCaptureMessage();
+   captureBtn.disabled=true;
+   const original=captureBtn.textContent;
+   captureBtn.textContent='캡처 중...';
+   try{
+     const canvas=renderCaptureCanvas();
+     const copied=await copyCanvasToClipboard(canvas);
+     if(copied){
+       showCaptureMessage('캡처 완료! 활동지에 붙여넣으세요.(ctrl +v)',true);
+     }else{
+       const link=document.createElement('a');
+       link.download='4-Queen_탐색트리.png';
+       link.href=canvas.toDataURL('image/png');
+       document.body.appendChild(link);
+       link.click();
+       link.remove();
+       showCaptureMessage('캡처는 완료했지만 브라우저가 자동 복사를 차단했어요. PNG 파일로 저장했습니다.',false);
+     }
+   }catch(err){
+     showCaptureMessage('캡처 중 오류가 발생했습니다. 다시 시도해 주세요.',false);
+   }finally{
+     captureBtn.disabled=false;
+     captureBtn.textContent=original;
+   }
+ }
+
+ treeScroll.addEventListener('wheel',e=>{
+   if(!e.ctrlKey)return;
+   e.preventDefault();
+   const rect=treeScroll.getBoundingClientRect();
+   const mx=e.clientX-rect.left;
+   const my=e.clientY-rect.top;
+   const old=zoomScale;
+   const factor=e.deltaY<0?1.12:0.89;
+   const next=clamp(old*factor,0.3,2.2);
+   const contentX=(mx-panX)/old;
+   const contentY=(my-panY)/old;
+   zoomScale=next;
+   panX=mx-contentX*next;
+   panY=my-contentY*next;
+   applyTreeTransform();
+ },{passive:false});
+
+ treeScroll.addEventListener('pointerdown',e=>{
+   if(e.button!==0 || e.target.closest('.tree-node'))return;
+   dragState={x:e.clientX,y:e.clientY,panX,panY,pointerId:e.pointerId};
+   treeScroll.classList.add('dragging');
+   treeScroll.setPointerCapture(e.pointerId);
+ });
+ treeScroll.addEventListener('pointermove',e=>{
+   if(!dragState || dragState.pointerId!==e.pointerId)return;
+   panX=dragState.panX+(e.clientX-dragState.x);
+   panY=dragState.panY+(e.clientY-dragState.y);
+   applyTreeTransform();
+ });
+ function endDrag(e){
+   if(!dragState || (e.pointerId!==undefined && dragState.pointerId!==e.pointerId))return;
+   dragState=null;
+   treeScroll.classList.remove('dragging');
+ }
+ treeScroll.addEventListener('pointerup',endDrag);
+ treeScroll.addEventListener('pointercancel',endDrag);
+ checkTreeBtn.addEventListener('click',checkTreeCompletion);
+ captureBtn.addEventListener('click',captureTree);
+ window.addEventListener('resize',()=>{
+   if(!zoomInitialized)return;
+   applyTreeTransform();
+ });
+
+ backBtn.addEventListener('click',()=>{
+   hideCaptureMessage();
+   const n=cur();if(n.parent===null)return;
+   currentId=n.parent;
+   recomputeDeadStatuses();
+   showCurrentNodeStatus('한 단계 이전 상태로 돌아왔습니다. 다른 칸을 선택하면 새로운 가지가 만들어집니다.');
+   setTimeout(scrollCurrentIntoView,30);
+ });
+ resetBtn.addEventListener('click',fresh);
+ fresh();
+})();
+</script>
+</div>
+</body>
+</html>
