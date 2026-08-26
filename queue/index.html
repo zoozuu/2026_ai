@@ -19,7 +19,7 @@ button:hover{transform:translateY(-1px)}
 button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .mode-btn{background:#e5e7eb;color:#374151;border-radius:999px}
 .mode-btn.active{background:#0891b2;color:#fff}
-.primary{background:#0891b2;color:#fff}.secondary{background:#e5e7eb;color:#111827}.enqueue{background:#dcfce7;color:#166534}.dequeue{background:#fee2e2;color:#991b1b}.hint{background:#fef3c7;color:#92400e}
+.primary{background:#0891b2;color:#fff}.secondary{background:#e5e7eb;color:#111827}.enqueue{background:#dcfce7;color:#166534}.dequeue{background:#fee2e2;color:#991b1b}.hint{background:#fef3c7;color:#92400e}.capture{background:#dbeafe;color:#1d4ed8}
 .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
 @media(max-width:850px){.grid{grid-template-columns:1fr}}
 .card{padding:22px}
@@ -28,6 +28,7 @@ h2{margin:0 0 14px;font-size:21px}
 .challenge-box h3{margin:0 0 8px;font-size:17px}
 .target{font-size:20px;font-weight:900;color:#0f766e;line-height:1.6}
 .input-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.result-actions{margin-top:10px;padding-top:10px;border-top:1px dashed #cbd5e1}
 input{padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;min-width:120px}
 .queue-wrap{padding:30px 0 20px}
 .queue-flow{display:grid;grid-template-columns:46px minmax(0,1fr) 46px;align-items:center;gap:10px}
@@ -80,6 +81,9 @@ input{padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font-size:15
 <button id="enqueueFreeBtn" class="enqueue">enqueue</button>
 <button id="dequeueFreeBtn" class="dequeue">dequeue</button>
 <button id="clearBtn" class="secondary">초기화</button>
+</div>
+<div class="input-row result-actions">
+<button id="captureResultBtn" class="capture">결과 캡처</button>
 </div>
 </div>
 
@@ -197,6 +201,59 @@ function clearAll(){
   queue=[];history=[];finishEl.classList.remove("show");render();setStatus("큐를 초기화했습니다.");
 }
 
+function roundRectPath(ctx,x,y,w,h,r){
+  const radius=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+radius,y);
+  ctx.lineTo(x+w-radius,y);ctx.quadraticCurveTo(x+w,y,x+w,y+radius);
+  ctx.lineTo(x+w,y+h-radius);ctx.quadraticCurveTo(x+w,y+h,x+w-radius,y+h);
+  ctx.lineTo(x+radius,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-radius);
+  ctx.lineTo(x,y+radius);ctx.quadraticCurveTo(x,y,x+radius,y);ctx.closePath();
+}
+
+function canvasToPngBlob(canvas){
+  const data=canvas.toDataURL("image/png").split(",")[1];
+  const binary=atob(data),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return new Blob([bytes],{type:"image/png"});
+}
+
+async function copyCapturedImage(blob){
+  try{
+    if(!navigator.clipboard?.write || !window.ClipboardItem)throw new Error("image clipboard unsupported");
+    await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);
+    setStatus("큐 결과 이미지를 복사했습니다. 원하는 곳에서 <b>Ctrl+V</b>로 붙여넣으세요.","good");
+  }catch{
+    const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download="queue_practice_result.png";link.click();
+    setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    setStatus("브라우저에서 이미지 복사를 허용하지 않아 PNG로 저장했습니다. HTTPS 주소에서 열면 바로 복사할 수 있습니다.","bad");
+  }
+}
+
+function drawLeftArrow(ctx,x1,x2,y){
+  ctx.strokeStyle="#64748b";ctx.fillStyle="#64748b";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y);ctx.lineTo(x2+12,y-8);ctx.lineTo(x2+12,y+8);ctx.closePath();ctx.fill();
+}
+
+function capturePracticeResult(){
+  if(!history.length){setStatus("먼저 자유 실습에서 enqueue 또는 dequeue를 수행하세요.","bad");return;}
+  const itemCount=Math.max(queue.length,1);
+  const width=Math.max(390,180+itemCount*112),height=150;
+  const canvas=document.createElement("canvas");canvas.width=width*2;canvas.height=height*2;
+  const ctx=canvas.getContext("2d");ctx.scale(2,2);ctx.fillStyle="#f8fafc";ctx.fillRect(0,0,width,height);
+  const channelW=itemCount*112,startX=(width-channelW)/2,topY=18;
+  ctx.strokeStyle="#334155";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(startX,topY);ctx.lineTo(startX+channelW,topY);ctx.moveTo(startX,topY+112);ctx.lineTo(startX+channelW,topY+112);ctx.stroke();
+  drawLeftArrow(ctx,startX-14,startX-66,topY+56);drawLeftArrow(ctx,startX+channelW+66,startX+channelW+14,topY+56);
+  if(queue.length){
+    queue.forEach((value,i)=>{
+      const x=startX+i*112+5;roundRectPath(ctx,x,topY+22,100,68,8);ctx.fillStyle=i===0?"#fde68a":"#cffafe";ctx.fill();
+      ctx.strokeStyle=i===0?"#f59e0b":"#22d3ee";ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle="#155e75";ctx.font='900 18px "Pretendard","Noto Sans KR",sans-serif';ctx.textAlign="center";ctx.fillText(String(value),x+50,topY+63);ctx.textAlign="left";
+    });
+  }else{
+    ctx.fillStyle="#94a3b8";ctx.font='800 18px "Pretendard","Noto Sans KR",sans-serif';ctx.textAlign="center";ctx.fillText("비어 있음",startX+channelW/2,topY+64);ctx.textAlign="left";
+  }
+  copyCapturedImage(canvasToPngBlob(canvas));
+}
+
 const challengeSets=[
   [{t:"enqueue",v:"A"},{t:"enqueue",v:"B"},{t:"dequeue"},{t:"enqueue",v:"C"}],
   [{t:"enqueue",v:"10"},{t:"enqueue",v:"20"},{t:"enqueue",v:"30"},{t:"dequeue"},{t:"dequeue"}],
@@ -265,6 +322,7 @@ document.getElementById("challengeBtn").onclick=()=>setMode("challenge");
 document.getElementById("enqueueFreeBtn").onclick=freeEnqueue;
 document.getElementById("dequeueFreeBtn").onclick=freeDequeue;
 document.getElementById("clearBtn").onclick=clearAll;
+document.getElementById("captureResultBtn").onclick=capturePracticeResult;
 document.getElementById("enqueueChallengeBtn").onclick=challengeEnqueue;
 document.getElementById("dequeueChallengeBtn").onclick=challengeDequeue;
 document.getElementById("hintBtn").onclick=hint;
