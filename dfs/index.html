@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>깊이우선탐색(DFS) 도전</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --indigo: #4f46e5;
+      --indigo-dark: #3730a3;
+      --slate: #334155;
+      --line: #e5e7eb;
+      --good: #166534;
+      --bad: #991b1b;
+    }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 20px 42px;
+    }
+    .header, .card {
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+    }
+    .header {
+      padding: 26px 28px;
+      margin-bottom: 20px;
+    }
+    .header h1 { margin: 0 0 8px; font-size: 30px; }
+    .header p { margin: 4px 0; color: #4b5563; line-height: 1.6; }
+    .header .dfs-definition {
+      margin: 12px 0 14px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      color: #166534;
+      font-weight: 800;
+    }
+    .rule {
+      margin-top: 14px;
+      background: #eef2ff;
+      border-left: 5px solid #6366f1;
+      padding: 13px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      line-height: 1.6;
+    }
+    .dfs-core {
+      margin-top: 12px;
+      padding: 16px 18px;
+      border: 1px solid #dbe2ea;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+    .dfs-core h2 {
+      margin: 0 0 9px;
+      color: #1e293b;
+      font-size: 18px;
+    }
+    .dfs-core ol {
+      margin: 0;
+      padding-left: 23px;
+      color: #475569;
+      line-height: 1.75;
+    }
+    .dfs-core li { padding-left: 3px; }
+    .dfs-core code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #e0e7ff;
+      color: #3730a3;
+      font-family: inherit;
+      font-weight: 900;
+    }
+    .problem-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .problem-selector-label {
+      margin-right: 3px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .problem-btn {
+      padding: 9px 14px;
+      border: 1px solid #dbe2ea;
+      background: #f8fafc;
+      color: #475569;
+    }
+    .problem-btn.active {
+      border-color: var(--indigo);
+      background: var(--indigo);
+      color: #fff;
+    }
+    .problem-btn.concept.active {
+      border-color: #059669;
+      background: #059669;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.55fr .9fr;
+      gap: 20px;
+    }
+    .card { padding: 22px; }
+    .graph-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .graph-top h2, .side h2 { margin: 0; font-size: 21px; }
+    .problem-title {
+      display: inline-block;
+      margin-left: 7px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 12px;
+      vertical-align: 2px;
+    }
+    .controls, .stack-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      border: 0;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .16s, opacity .16s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .primary { background: var(--indigo); color: #fff; }
+    .capture { background: #0f766e; color: #fff; }
+    .secondary { background: #e5e7eb; color: #111827; }
+    .hint { background: #fef3c7; color: #92400e; }
+    .push { background: #dcfce7; color: var(--good); }
+    .pop { background: #fee2e2; color: var(--bad); }
+    .graph-area {
+      position: relative;
+      height: 520px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 20% 20%, #f8fafc, #eef2f7 70%);
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    svg { width: 100%; height: 100%; display: block; }
+    .edge { stroke: #94a3b8; stroke-width: 4; }
+    .node circle {
+      fill: #fff;
+      stroke: #64748b;
+      stroke-width: 4;
+      transition: .2s;
+      cursor: pointer;
+    }
+    .node text {
+      font-size: 22px;
+      font-weight: 900;
+      pointer-events: none;
+      fill: #111827;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    .node:hover circle { stroke: var(--indigo); stroke-width: 6; }
+    .node.visited circle { fill: #dcfce7; stroke: #16a34a; }
+    .node.current circle { fill: #fde68a; stroke: #d97706; stroke-width: 6; }
+    .node.selected circle { fill: #dbeafe; stroke: #2563eb; stroke-width: 6; }
+    .node.wrong circle {
+      animation: shake .25s linear 0s 2;
+      fill: #fee2e2;
+      stroke: #dc2626;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: #475569;
+      margin-top: 10px;
+    }
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      border-radius: 50%;
+      vertical-align: -1px;
+    }
+    .lg1::before { background:#fff; border:2px solid #64748b; }
+    .lg2::before { background:#fde68a; border:2px solid #d97706; }
+    .lg3::before { background:#dcfce7; border:2px solid #16a34a; }
+    .lg4::before { background:#dbeafe; border:2px solid #2563eb; }
+    .status {
+      margin-top: 14px;
+      min-height: 62px;
+      border-radius: 14px;
+      padding: 14px 16px;
+      line-height: 1.55;
+      font-weight: 800;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .status.good { background: #ecfdf5; color: var(--good); border-color: #bbf7d0; }
+    .status.bad { background: #fef2f2; color: var(--bad); border-color: #fecaca; }
+    .status.info { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .side { display: flex; flex-direction: column; gap: 16px; }
+    .mini-card {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .mini-card h3 { margin: 0 0 10px; font-size: 16px; }
+    .sequence {
+      min-height: 44px;
+      font-size: 20px;
+      font-weight: 900;
+      color: #4338ca;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+    .history-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .history-note {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .stack-history {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .history-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 8px 5px;
+      border-radius: 11px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      min-width: 0;
+    }
+    .history-action {
+      color: #475569;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .history-stack {
+      width: 88px;
+      min-height: 34px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 3px;
+      border-left: 4px solid var(--slate);
+      border-right: 4px solid var(--slate);
+      border-bottom: 4px solid var(--slate);
+      border-radius: 0 0 10px 10px;
+      padding: 4px 5px 5px;
+      background: #fff;
+    }
+    .history-stack-item {
+      min-height: 23px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      background: #ddd6fe;
+      color: #4c1d95;
+      border: 1px solid #c4b5fd;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .history-stack-item.top {
+      background: #fde68a;
+      color: #92400e;
+      border-color: #f59e0b;
+    }
+    .history-stack-empty {
+      padding: 5px 1px;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+    }
+    .history-step.push-step { border-color: #bbf7d0; }
+    .history-step.pop-step { border-color: #fecaca; }
+    .selected-box {
+      font-size: 18px;
+      font-weight: 900;
+      color: #1d4ed8;
+      min-height: 28px;
+    }
+    .stack-wrap {
+      display: flex;
+      justify-content: center;
+      min-height: 210px;
+      align-items: flex-end;
+    }
+    .stack {
+      width: 155px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 5px;
+      border-left: 5px solid var(--slate);
+      border-right: 5px solid var(--slate);
+      border-bottom: 5px solid var(--slate);
+      padding: 7px 8px 8px;
+      min-height: 64px;
+      border-radius: 0 0 12px 12px;
+      background: #fff;
+    }
+    .stack-item {
+      padding: 10px 0;
+      border-radius: 9px;
+      text-align: center;
+      font-weight: 900;
+      background: #ddd6fe;
+      color: #4c1d95;
+      border: 1px solid #c4b5fd;
+    }
+    .stack-item.top {
+      background: #fde68a;
+      color: #92400e;
+      border-color: #f59e0b;
+    }
+    .stack-empty { text-align: center; color: #9ca3af; padding: 8px 0; font-weight: 700; }
+    .stack-controls { justify-content: center; margin-top: 12px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .stat b { display: block; font-size: 21px; margin-top: 4px; }
+    .finish {
+      display: none;
+      margin-top: 16px;
+      background: linear-gradient(135deg, #eef2ff, #ecfeff);
+      border: 1px solid #c7d2fe;
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+    .finish.show { display:block; }
+    .finish h3 { margin:0 0 8px; }
+    .finish .answer { font-size: 20px; font-weight: 900; color: var(--indigo-dark); }
+    .finish .summary { margin-top: 8px; color: #475569; font-weight: 800; }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+      .graph-area { height: 440px; }
+    }
+    @media (max-width: 560px) {
+      .wrap { padding: 14px 10px 28px; }
+      .header, .card { border-radius: 16px; padding: 16px; }
+      .header h1 { font-size: 24px; }
+      .graph-area { height: 360px; }
+      .stats { grid-template-columns: 1fr; }
+      .stack-history { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <section class="header">
+    <h1>깊이우선탐색(DFS) 도전</h1>
+    <p class="dfs-definition"><b>깊이 우선 탐색(DFS)</b>은 탐색 트리에서 갈 수 있는 길이 있는 동안 한 방향으로 계속 전진하여 탐색하는 방법입니다.</p>
+    <p>다음에 방문할 정점을 직접 선택하고, 스택의 <b>push</b>와 <b>pop</b>을 판단해 보세요.</p>
+    <p>틀려도 현재 상태는 바뀌지 않습니다. 같은 단계에서 다시 생각해 도전할 수 있습니다.</p>
+    <div class="rule">도전 규칙: 시작 정점은 <b>A</b>입니다. 방문 가능한 인접 정점이 여러 개라면 <b>알파벳순으로 가장 앞선 정점</b>을 먼저 방문합니다.</div>
+    <div class="dfs-core">
+      <h2>DFS 핵심</h2>
+      <ol>
+        <li>시작 정점을 방문하고 스택에 넣습니다(<code>push</code>).</li>
+        <li>현재 정점에 방문하지 않은 인접 정점이 있으면, 미리 정한 순서에 따라 하나를 선택합니다.</li>
+        <li>선택한 정점을 방문하고 스택에 넣은 뒤 계속 전진합니다.</li>
+        <li>막다른 길에 도달하면 현재 정점을 스택에서 빼고(<code>pop</code>), 다른 길이 남아 있는 이전 분기점까지 되돌아갑니다.</li>
+        <li>목표에 도달하거나 모든 정점을 방문할 때까지 이 과정을 반복합니다.</li>
+      </ol>
+    </div>
+    <div class="problem-selector" aria-label="실습 문제 선택">
+      <span class="problem-selector-label">문제 선택</span>
+      <button class="problem-btn concept active" data-problem-index="0">개념 실습</button>
+      <button class="problem-btn" data-problem-index="1">실습 1</button>
+      <button class="problem-btn" data-problem-index="2">실습 2</button>
+      <button class="problem-btn" data-problem-index="3">실습 3</button>
+    </div>
+  </section>
+
+  <div class="grid" id="captureArea">
+    <section class="card">
+      <div class="graph-top">
+        <h2>그래프 <span id="problemTitle" class="problem-title">개념 실습</span></h2>
+        <div class="controls">
+          <button class="capture" id="captureBtn" data-html2canvas-ignore="true">결과 캡처</button>
+          <button class="hint" id="hintBtn">힌트</button>
+          <button class="secondary" id="resetBtn">다시 시작</button>
+          <button class="primary" id="newBtn">다음 문제</button>
+        </div>
+      </div>
+      <div class="graph-area">
+        <svg id="graphSvg" viewBox="0 0 760 520" role="img" aria-label="깊이우선탐색 그래프"></svg>
+      </div>
+      <div class="legend">
+        <span class="lg1">미방문</span>
+        <span class="lg2">현재 정점</span>
+        <span class="lg3">방문 완료</span>
+        <span class="lg4">선택한 정점</span>
+      </div>
+      <div id="status" class="status info" aria-live="polite"></div>
+      <div id="finish" class="finish" aria-live="polite">
+        <h3>🎉 탐색 완료!</h3>
+        <div id="finalAnswer" class="answer"></div>
+        <div id="finalSummary" class="summary"></div>
+      </div>
+    </section>
+
+    <aside class="card side">
+      <h2>탐색 과정</h2>
+      <div class="mini-card">
+        <h3>방문 순서</h3>
+        <div id="sequence" class="sequence">-</div>
+      </div>
+      <div class="mini-card">
+        <div class="history-title">
+          <h3>스택 변화 기록</h3>
+          <span class="history-note">노란색이 TOP</span>
+        </div>
+        <div id="stackHistory" class="stack-history"></div>
+      </div>
+      <div class="mini-card">
+        <h3>선택한 정점</h3>
+        <div id="selectedNodeBox" class="selected-box">없음</div>
+        <div style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.5;">
+          방문할 정점을 클릭한 뒤 <b>스택에 넣기</b>를 누르세요.
+        </div>
+      </div>
+      <div class="mini-card">
+        <h3>현재 스택</h3>
+        <div class="stack-wrap"><div id="stack" class="stack"></div></div>
+        <div class="stack-controls">
+          <button id="pushBtn" class="push">스택에 넣기 (push)</button>
+          <button id="popBtn" class="pop">스택에서 빼기 (pop)</button>
+        </div>
+      </div>
+      <div class="mini-card">
+        <h3>도전 기록</h3>
+        <div class="stats">
+          <div class="stat">정답 조작<b id="correctCnt">0</b></div>
+          <div class="stat">오답 조작<b id="wrongCnt">0</b></div>
+          <div class="stat">정확도<b id="accuracy">100%</b></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+const problems = [
+  {
+    title: "교과서 개념 실습",
+    nodes: {
+      A:[380,55], B:[190,165], C:[380,165], D:[570,165],
+      E:[155,285], F:[350,285], G:[510,285], H:[665,285],
+      I:[75,435], J:[235,435], K:[685,435]
+    },
+    edges:[["A","B"],["A","C"],["A","D"],["B","E"],["C","F"],["D","G"],["D","H"],["E","I"],["E","J"],["H","K"]]
+  },
+  {
+    title: "실습 1",
+    nodes: { A:[380,70], B:[210,180], C:[550,180], D:[120,330], E:[300,330], F:[475,330], G:[650,330] },
+    edges:[["A","B"],["A","C"],["B","D"],["B","E"],["C","F"],["C","G"]]
+  },
+  {
+    title: "실습 2",
+    nodes: { A:[380,60], B:[210,170], C:[550,170], D:[100,300], E:[300,300], F:[475,300], G:[660,300], H:[300,440] },
+    edges:[["A","B"],["A","C"],["B","D"],["B","E"],["C","F"],["C","G"],["E","H"]]
+  },
+  {
+    title: "실습 3",
+    nodes: { A:[380,55], B:[150,160], C:[380,175], D:[610,160], E:[70,300], F:[220,300], G:[380,315], H:[540,300], I:[690,300], J:[220,450] },
+    edges:[["A","B"],["A","C"],["A","D"],["B","E"],["B","F"],["C","G"],["D","H"],["D","I"],["F","J"]]
+  }
+];
+
+let problemIndex = 0;
+let problem;
+let adj = {};
+let visited = new Set();
+let stack = [];
+let stackHistory = [];
+let order = [];
+let current = null;
+let selectedNode = null;
+let correctCnt = 0;
+let wrongCnt = 0;
+let consecutiveWrong = 0;
+let finished = false;
+
+const svg = document.getElementById("graphSvg");
+const statusBox = document.getElementById("status");
+const seqBox = document.getElementById("sequence");
+const stackBox = document.getElementById("stack");
+const stackHistoryBox = document.getElementById("stackHistory");
+const correctEl = document.getElementById("correctCnt");
+const wrongEl = document.getElementById("wrongCnt");
+const accuracyEl = document.getElementById("accuracy");
+const finishBox = document.getElementById("finish");
+const finalAnswer = document.getElementById("finalAnswer");
+const finalSummary = document.getElementById("finalSummary");
+const selectedNodeBox = document.getElementById("selectedNodeBox");
+const pushBtn = document.getElementById("pushBtn");
+const popBtn = document.getElementById("popBtn");
+const problemTitleEl = document.getElementById("problemTitle");
+const newBtn = document.getElementById("newBtn");
+const problemButtons = document.querySelectorAll(".problem-btn");
+
+function buildAdj() {
+  adj = {};
+  Object.keys(problem.nodes).forEach(n => adj[n] = []);
+  problem.edges.forEach(([a,b]) => {
+    adj[a].push(b);
+    adj[b].push(a);
+  });
+  Object.keys(adj).forEach(n => adj[n].sort());
+}
+
+function renderGraph() {
+  svg.innerHTML = "";
+  problem.edges.forEach(([a,b]) => {
+    const [x1,y1] = problem.nodes[a];
+    const [x2,y2] = problem.nodes[b];
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    line.setAttribute("class", "edge");
+    svg.appendChild(line);
+  });
+  Object.entries(problem.nodes).forEach(([name,[x,y]]) => {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "node");
+    g.setAttribute("data-node", name);
+    g.setAttribute("tabindex", "0");
+    g.setAttribute("role", "button");
+    g.setAttribute("aria-label", `${name} 정점 선택`);
+    g.addEventListener("click", () => handleNodeClick(name));
+    g.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleNodeClick(name);
+      }
+    });
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", x);
+    circle.setAttribute("cy", y);
+    circle.setAttribute("r", 34);
+    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text.setAttribute("x", x);
+    text.setAttribute("y", y + 1);
+    text.textContent = name;
+    g.appendChild(circle);
+    g.appendChild(text);
+    svg.appendChild(g);
+  });
+  updateNodeStyles();
+}
+
+function updateNodeStyles(wrongNode = null) {
+  document.querySelectorAll(".node").forEach(el => {
+    const name = el.dataset.node;
+    el.classList.remove("visited", "current", "selected", "wrong");
+    if (visited.has(name)) el.classList.add("visited");
+    if (name === current) el.classList.add("current");
+    if (name === selectedNode && !visited.has(name)) el.classList.add("selected");
+    if (name === wrongNode) el.classList.add("wrong");
+  });
+}
+
+function setStatus(text, type = "info") {
+  statusBox.className = `status ${type}`;
+  statusBox.innerHTML = text;
+}
+
+function accuracy() {
+  const total = correctCnt + wrongCnt;
+  return total ? Math.round(correctCnt / total * 100) : 100;
+}
+
+function updatePanels() {
+  seqBox.textContent = order.length ? order.join(" → ") : "-";
+  selectedNodeBox.textContent = selectedNode || "없음";
+  stackBox.innerHTML = "";
+  if (!stack.length) {
+    stackBox.innerHTML = '<div class="stack-empty">비어 있음</div>';
+  } else {
+    stack.forEach((name, index) => {
+      const item = document.createElement("div");
+      item.className = `stack-item${index === stack.length - 1 ? " top" : ""}`;
+      item.textContent = name;
+      stackBox.appendChild(item);
+    });
+  }
+
+  stackHistoryBox.innerHTML = "";
+  stackHistory.forEach((entry, index) => {
+    const step = document.createElement("div");
+    const actionType = entry.action.startsWith("push")
+      ? " push-step"
+      : entry.action.startsWith("pop") ? " pop-step" : "";
+    step.className = `history-step${actionType}`;
+
+    const action = document.createElement("span");
+    action.className = "history-action";
+    action.textContent = `${index}. ${entry.action}`;
+
+    const snapshot = document.createElement("div");
+    snapshot.className = "history-stack";
+    if (!entry.state.length) {
+      const empty = document.createElement("div");
+      empty.className = "history-stack-empty";
+      empty.textContent = "비어 있음";
+      snapshot.appendChild(empty);
+    } else {
+      entry.state.forEach((name, stateIndex) => {
+        const item = document.createElement("div");
+        item.className = `history-stack-item${stateIndex === entry.state.length - 1 ? " top" : ""}`;
+        item.textContent = name;
+        snapshot.appendChild(item);
+      });
+    }
+
+    step.appendChild(snapshot);
+    step.appendChild(action);
+    stackHistoryBox.appendChild(step);
+  });
+
+  correctEl.textContent = correctCnt;
+  wrongEl.textContent = wrongCnt;
+  accuracyEl.textContent = `${accuracy()}%`;
+  pushBtn.disabled = finished || !selectedNode;
+  popBtn.disabled = finished || stack.length === 0;
+}
+
+function recordStackChange(action) {
+  stackHistory.push({
+    action,
+    state: [...stack]
+  });
+}
+
+function nextUnvisitedNeighbor(name) {
+  return adj[name].find(node => !visited.has(node)) || null;
+}
+
+function expectedNextNode() {
+  if (visited.size === 0) return "A";
+  if (!stack.length) return null;
+  return nextUnvisitedNeighbor(stack[stack.length - 1]);
+}
+
+function expectedActionHint() {
+  if (visited.size === 0) return `시작 정점은 <b>A</b>입니다. A를 선택한 뒤 <b>push</b>하세요.`;
+  if (!stack.length) return `스택이 비어 있습니다. 문제를 다시 시작해 보세요.`;
+  const top = stack[stack.length - 1];
+  const next = nextUnvisitedNeighbor(top);
+  if (next) return `현재 정점 <b>${top}</b>과 연결된 미방문 정점을 알파벳순으로 확인하세요.`;
+  return `현재 정점 <b>${top}</b>에서는 더 갈 곳이 없습니다. 이전 정점으로 돌아가는 연산을 생각해 보세요.`;
+}
+
+function registerWrong(detail, wrongNode = null) {
+  wrongCnt++;
+  consecutiveWrong++;
+  updatePanels();
+  if (wrongNode) {
+    updateNodeStyles(wrongNode);
+    setTimeout(() => updateNodeStyles(), 420);
+  }
+  const autoHint = consecutiveWrong >= 2
+    ? `<br><span style="color:#92400e">💡 힌트: ${expectedActionHint()}</span>`
+    : "";
+  setStatus(`<b>오답입니다. 다시 해 보세요.</b><br>${detail}${autoHint}`, "bad");
+}
+
+function registerCorrect(message) {
+  correctCnt++;
+  consecutiveWrong = 0;
+  setStatus(`<b>정답입니다!</b> ${message}`, "good");
+}
+
+function handleNodeClick(name) {
+  if (finished) return;
+  if (visited.has(name)) {
+    registerWrong(`${name}은(는) 이미 방문한 정점입니다. 미방문 정점을 선택하세요.`, name);
+    return;
+  }
+  selectedNode = name;
+  updateNodeStyles();
+  updatePanels();
+  setStatus(`<b>${name}</b>을(를) 선택했습니다. 다음 방문 정점이 맞다면 <b>스택에 넣기(push)</b>를 누르세요.`, "info");
+}
+
+function challengePush() {
+  if (finished || !selectedNode) return;
+  const expected = expectedNextNode();
+  if (!expected) {
+    registerWrong(`지금은 새로운 정점을 push할 단계가 아닙니다.`, selectedNode);
+    return;
+  }
+  if (selectedNode !== expected) {
+    registerWrong(`${selectedNode}은(는) 현재 단계에서 방문할 정점이 아닙니다.`, selectedNode);
+    return;
+  }
+  const pushed = selectedNode;
+  visited.add(pushed);
+  stack.push(pushed);
+  recordStackChange(`push(${pushed})`);
+  order.push(pushed);
+  current = pushed;
+  selectedNode = null;
+  registerCorrect(`<b>${pushed}</b>을(를) 스택에 넣고 방문했습니다. 다음 동작을 판단하세요.`);
+  updateNodeStyles();
+  updatePanels();
+  checkFinish();
+}
+
+function challengePop() {
+  if (finished || !stack.length) return;
+  const top = stack[stack.length - 1];
+  const next = nextUnvisitedNeighbor(top);
+  if (next) {
+    registerWrong(`${top}에서 아직 방문할 수 있는 인접 정점이 있습니다.`);
+    return;
+  }
+  const removed = stack.pop();
+  recordStackChange(`pop(${removed})`);
+  selectedNode = null;
+  current = stack.length ? stack[stack.length - 1] : null;
+  const returnText = current ? `<b>${current}</b>로 되돌아왔습니다.` : `스택이 비었습니다.`;
+  registerCorrect(`<b>${removed}</b>을(를) 스택에서 뺐습니다. ${returnText}`);
+  updateNodeStyles();
+  updatePanels();
+  checkFinish();
+}
+
+function checkFinish() {
+  const allVisited = visited.size === Object.keys(problem.nodes).length;
+  if (!allVisited) return;
+  if (stack.length) {
+    setStatus(`모든 정점을 방문했습니다. 이제 DFS가 끝날 때까지 <b>pop</b>하여 스택을 비워 보세요.`, "info");
+    return;
+  }
+  finished = true;
+  current = null;
+  updateNodeStyles();
+  updatePanels();
+  finalAnswer.textContent = `방문 순서: ${order.join(" → ")}`;
+  finalSummary.textContent = `정답 ${correctCnt}회 · 오답 ${wrongCnt}회 · 정확도 ${accuracy()}%`;
+  finishBox.classList.add("show");
+  setStatus(`<b>모든 정점을 올바르게 탐색했습니다. DFS 도전 완료!</b>`, "good");
+}
+
+function resetGame() {
+  visited = new Set();
+  stack = [];
+  stackHistory = [{ action: "초기 상태", state: [] }];
+  order = [];
+  current = null;
+  selectedNode = null;
+  correctCnt = 0;
+  wrongCnt = 0;
+  consecutiveWrong = 0;
+  finished = false;
+  finishBox.classList.remove("show");
+  setStatus(`시작 정점 <b>A</b>를 선택한 뒤 <b>스택에 넣기(push)</b>를 눌러 탐색을 시작하세요.`, "info");
+  updatePanels();
+  renderGraph();
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error("이미지를 만들 수 없습니다."));
+    }, "image/png");
+  });
+}
+
+function downloadCapture(blob) {
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = "DFS_탐색_결과.png";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function captureResult() {
+  const button = document.getElementById("captureBtn");
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "캡처 중...";
+
+  try {
+    if (typeof html2canvas !== "function") {
+      throw new Error("캡처 기능을 불러오지 못했습니다.");
+    }
+
+    const target = document.getElementById("captureArea");
+    const canvas = await html2canvas(target, {
+      backgroundColor: "#f5f7fb",
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY
+    });
+    const blob = await canvasToBlob(canvas);
+
+    let copied = false;
+    if (window.isSecureContext && navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob })
+        ]);
+        copied = true;
+      } catch (clipboardError) {
+        copied = false;
+      }
+    }
+
+    if (copied) {
+      button.textContent = "복사 완료!";
+      setStatus(`현재 DFS 탐색 화면을 이미지로 복사했습니다. 구글 슬라이드나 문서에서 <b>Ctrl+V</b>로 붙여넣으세요.`, "good");
+    } else {
+      downloadCapture(blob);
+      button.textContent = "이미지 저장됨";
+      setStatus(`브라우저가 이미지 복사를 허용하지 않아 PNG 파일로 저장했습니다. GitHub Pages 주소에서 실행하면 클립보드 복사를 사용할 수 있습니다.`, "info");
+    }
+  } catch (error) {
+    button.textContent = "캡처 실패";
+    setStatus(`캡처하지 못했습니다. GitHub Pages의 HTTPS 주소에서 다시 시도해 주세요.`, "bad");
+  } finally {
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.disabled = false;
+    }, 1800);
+  }
+}
+
+function loadProblem(index) {
+  problemIndex = index;
+  problem = problems[index];
+  problemTitleEl.textContent = problem.title;
+  problemButtons.forEach(button => {
+    button.classList.toggle("active", Number(button.dataset.problemIndex) === index);
+  });
+  newBtn.textContent = index === problems.length - 1 ? "처음 문제" : "다음 문제";
+  buildAdj();
+  resetGame();
+}
+
+document.getElementById("pushBtn").addEventListener("click", challengePush);
+document.getElementById("popBtn").addEventListener("click", challengePop);
+document.getElementById("captureBtn").addEventListener("click", captureResult);
+document.getElementById("resetBtn").addEventListener("click", resetGame);
+problemButtons.forEach(button => {
+  button.addEventListener("click", () => loadProblem(Number(button.dataset.problemIndex)));
+});
+newBtn.addEventListener("click", () => loadProblem((problemIndex + 1) % problems.length));
+document.getElementById("hintBtn").addEventListener("click", () => {
+  if (finished) {
+    setStatus(`탐색이 완료되었습니다. <b>다음 문제</b>로 다시 도전해 보세요.`, "info");
+    return;
+  }
+  setStatus(`💡 힌트: ${expectedActionHint()}`, "info");
+});
+
+loadProblem(0);
+</script>
+</body>
+</html>
