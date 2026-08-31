@@ -51,6 +51,18 @@
     .formula{background:#fff;border:1px solid #efc6c6;border-radius:10px;padding:10px 12px;font-size:1rem}
     .formula i{font-family:Georgia,"Times New Roman",serif;font-size:1.2rem}
     .formula-note{font-size:.86rem;color:var(--red-dark);font-weight:800;margin-top:7px}
+    .formula-note.application-emphasis{
+      margin-top:9px;
+      padding:10px 12px;
+      border:2px solid #d45a37;
+      border-radius:10px;
+      background:#fff3d6;
+      color:#9a321f;
+      font-size:.96rem;
+      font-weight:950;
+      line-height:1.5;
+      box-shadow:0 2px 8px rgba(154,50,31,.08);
+    }
     .rule-box{background:var(--gray)}
     .rule-title{font-weight:900;margin-bottom:6px}
     .rule-inline{display:grid;gap:4px}
@@ -330,8 +342,8 @@
 (() => {
   const problems = [
     {
-      tab:'0. 개념 실습',
-      title:'0. 개념 실습',
+      tab:'개념 실습',
+      title:'개념 실습',
       desc:'교과서 예시를 함께 따라가며 OPEN 리스트에서 다음 탐색 노드를 고르는 원리를 확인합니다.',
       guided:true,
       start:'A', goal:'G',
@@ -343,62 +355,6 @@
         E:{f:2,x:305,y:292,c:[]},
         F:{f:7,x:455,y:292,c:[]},
         G:{f:8,x:605,y:292,c:[]}
-      }
-    },
-    {
-      tab:'실습 1',
-      title:'실습 1 · 기본형',
-      desc:'평가값이 큰 노드를 따라가면 목표 노드에 빠르게 도달하는 기본적인 형태입니다.',
-      start:'A', goal:'H',
-      nodes:{
-        A:{f:3,x:380,y:42,c:['B','C','D']},
-        B:{f:6,x:145,y:145,c:['E','F']},
-        C:{f:8,x:380,y:145,c:['G']},
-        D:{f:5,x:615,y:145,c:['I','J']},
-        E:{f:2,x:70,y:260,c:[]},
-        F:{f:7,x:220,y:260,c:['K']},
-        G:{f:9,x:380,y:260,c:['H']},
-        I:{f:4,x:540,y:260,c:[]},
-        J:{f:3,x:690,y:260,c:[]},
-        K:{f:5,x:220,y:365,c:[]},
-        H:{f:10,x:380,y:365,c:[]}
-      }
-    },
-    {
-      tab:'실습 2',
-      title:'실습 2 · 막다른 길이 있는 탐색',
-      desc:'평가값이 큰 노드를 먼저 선택했지만 막다른 길에 도달할 수 있습니다. 그래도 OPEN에 남아 있는 노드로 탐색을 이어가야 합니다.',
-      start:'S', goal:'G',
-      nodes:{
-        S:{f:2,x:380,y:42,c:['A','B','C']},
-        A:{f:7,x:150,y:145,c:['D','E']},
-        B:{f:5,x:380,y:145,c:['F']},
-        C:{f:8,x:610,y:145,c:['H','I']},
-        D:{f:3,x:75,y:260,c:[]},
-        E:{f:6,x:225,y:260,c:[]},
-        F:{f:7,x:380,y:260,c:['G']},
-        H:{f:9,x:535,y:260,c:[]},
-        I:{f:4,x:685,y:260,c:[]},
-        G:{f:10,x:380,y:365,c:[]}
-      }
-    },
-    {
-      tab:'실습 3',
-      title:'실습 3 · OPEN 리스트가 많이 쌓이는 탐색',
-      desc:'탐색 과정에서 OPEN 리스트에 여러 노드가 누적됩니다. 선택하지 않은 노드가 OPEN에 계속 남는다는 점을 확인해 보세요.',
-      start:'P', goal:'Z',
-      nodes:{
-        P:{f:1,x:380,y:42,c:['Q','R','S']},
-        Q:{f:5,x:150,y:145,c:['T','U']},
-        R:{f:8,x:380,y:145,c:['V','W']},
-        S:{f:6,x:610,y:145,c:['X']},
-        T:{f:4,x:75,y:260,c:[]},
-        U:{f:7,x:225,y:260,c:['Y']},
-        V:{f:6,x:330,y:260,c:[]},
-        W:{f:9,x:450,y:260,c:['Z']},
-        X:{f:5,x:610,y:260,c:[]},
-        Y:{f:8,x:225,y:365,c:[]},
-        Z:{f:10,x:450,y:365,c:[]}
       }
     },
     {
@@ -440,6 +396,63 @@
         ['의성','울산',120],
         ['울산','부산',40]
       ]
+    },
+    {
+      tab:'실습 1',
+      title:'실습 1 · 기본형',
+      desc:'평가값이 큰 노드를 따라가면 목표 노드에 빠르게 도달하는 기본적인 형태입니다.',
+      start:'A', goal:'H',
+      nodes:{
+        A:{f:3,x:380,y:42,c:['B','C','D']},
+        B:{f:6,x:145,y:145,c:['E','F']},
+        C:{f:8,x:380,y:145,c:['G']},
+        D:{f:5,x:615,y:145,c:['I','J']},
+        E:{f:2,x:70,y:260,c:[]},
+        F:{f:7,x:220,y:260,c:['K']},
+        G:{f:9,x:380,y:260,c:['H']},
+        I:{f:4,x:540,y:260,c:[]},
+        J:{f:3,x:690,y:260,c:[]},
+        K:{f:5,x:220,y:365,c:[]},
+        H:{f:10,x:380,y:365,c:[]}
+      }
+    },
+    {
+      tab:'실습 2',
+      title:'실습 2 · 막다른 길이 있는 탐색',
+      desc:'평가값이 큰 노드를 먼저 선택했지만 막다른 길에 도달할 수 있습니다. 그래도 OPEN에 남아 있는 노드로 탐색을 이어가야 합니다.',
+      start:'S', goal:'G',
+      nodes:{
+        S:{f:2,x:380,y:42,c:['A','B','C']},
+        A:{f:7,x:150,y:145,c:['D','E']},
+        B:{f:5,x:380,y:145,c:['F']},
+        C:{f:8,x:610,y:145,c:['H','I']},
+        D:{f:3,x:75,y:260,c:[]},
+        E:{f:6,x:225,y:260,c:[]},
+        F:{f:7,x:380,y:260,c:['G']},
+        H:{f:9,x:535,y:260,c:[]},
+        I:{f:4,x:685,y:260,c:[]},
+        G:{f:10,x:380,y:365,c:[]}
+      }
+    },
+    {
+      tab:'실습 3',
+      title:'실습 3 · 평가 함숫값이 작을수록 좋은 탐색',
+      desc:'이번 실습에서는 평가 기준을 바꾸어, OPEN 리스트에서 평가 함숫값이 가장 작은 노드를 선택합니다. 선택하지 않은 노드는 OPEN에 계속 남습니다.',
+      better:'min',
+      start:'P', goal:'Z',
+      nodes:{
+        P:{f:10,x:380,y:42,c:['Q','R','S']},
+        Q:{f:4,x:150,y:145,c:['T','U']},
+        R:{f:2,x:380,y:145,c:['V','W']},
+        S:{f:6,x:610,y:145,c:['X']},
+        T:{f:8,x:75,y:260,c:[]},
+        U:{f:5,x:225,y:260,c:['Y']},
+        V:{f:3,x:330,y:260,c:[]},
+        W:{f:7,x:450,y:260,c:['Z']},
+        X:{f:2,x:610,y:260,c:[]},
+        Y:{f:4,x:225,y:365,c:[]},
+        Z:{f:1,x:450,y:365,c:[]}
+      }
     }
   ];
 
@@ -1028,15 +1041,26 @@
 
     if(pr.application){
       formulaMeaning.textContent='목표 상태까지 걸리는 예측 시간';
-      formulaRule.textContent='규칙: 이 활용 문제에서는 평가 함숫값 f(C)가 작을수록 좋은 노드라고 판단합니다.';
+      formulaRule.textContent='규칙: 평가 함숫값 f(C)가 작을수록 좋은 노드라고 판단합니다.';
+      formulaRule.classList.add('application-emphasis');
       rule2.innerHTML='<b>②</b> OPEN 리스트에서 평가 함숫값이 가장 작은 노드를 선택합니다.';
       rule4.innerHTML='<b>④</b> 선택한 도시와 연결된 인접 도시를 OPEN 리스트에 추가합니다.';
       treeTitle.textContent='경로 그래프';
       applicationPrompt.classList.add('show');
       svg.setAttribute('viewBox','0 0 760 430');
+    }else if(pr.better==='min'){
+      formulaMeaning.textContent='각 노드에 부여된 평가값';
+      formulaRule.textContent='규칙: 평가 함숫값 f(C)가 작을수록 좋은 노드라고 판단합니다.';
+      formulaRule.classList.add('application-emphasis');
+      rule2.innerHTML='<b>②</b> OPEN 리스트에서 평가 함숫값이 가장 작은 노드를 선택합니다.';
+      rule4.innerHTML='<b>④</b> 선택한 노드의 자식 노드를 찾아 OPEN 리스트에 추가합니다.';
+      treeTitle.textContent='탐색 트리';
+      applicationPrompt.classList.remove('show');
+      svg.setAttribute('viewBox','0 0 760 390');
     }else{
       formulaMeaning.textContent='각 노드에 부여된 평가값';
       formulaRule.textContent='규칙: 평가 함숫값 f(C)가 클수록 좋은 노드라고 판단합니다.';
+      formulaRule.classList.add('application-emphasis');
       rule2.innerHTML='<b>②</b> OPEN 리스트에서 평가 함숫값이 가장 큰 노드를 선택합니다.';
       rule4.innerHTML='<b>④</b> 선택한 노드의 자식 노드를 찾아 OPEN 리스트에 추가합니다.';
       treeTitle.textContent='탐색 트리';
