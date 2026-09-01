@@ -78,7 +78,18 @@
     .formula-sub{
       display:grid;gap:4px;margin-top:8px;font-size:.8rem;color:var(--red-dark)
     }
-    .formula-note{font-size:.86rem;color:var(--red-dark);font-weight:850;margin-top:8px}
+    .formula-note{
+      font-size:.94rem;
+      color:#9a321f;
+      font-weight:950;
+      margin-top:9px;
+      padding:10px 12px;
+      border:2px solid #d45a37;
+      border-radius:10px;
+      background:#fff3d6;
+      line-height:1.5;
+      box-shadow:0 2px 8px rgba(154,50,31,.08)
+    }
     .rule-box{background:var(--gray)}
     .rule-title{font-weight:900;margin-bottom:6px}
     .rule-inline{display:grid;gap:4px}
@@ -470,7 +481,7 @@
 (() => {
   const problems = [
     {
-      tab:'0. 개념 실습',
+      tab:'개념 실습',
       mode:'value',better:'max',
       guided:true,
       title:'가치를 평가하는 트리에서 f(n)=g(n)+h(n)을 함께 계산해 봅시다.',
@@ -484,6 +495,28 @@
         F:{h:4,x:470,y:275,c:[]},
         G:{h:2,x:630,y:275,c:[['H',2]]},
         H:{h:0,x:630,y:365,c:[]}
+      }
+    },
+    {
+      tab:'활용 문제',
+      application:true,
+      mode:'cost',better:'min',
+      graph:true,
+      title:'도시 간 이동 비용과 목표까지의 예상 비용을 이용하여 최적 경로를 찾아보세요.',
+      start:'부산',goal:'서울',
+      nodes:{
+        '서울':{h:0,x:82,y:68,c:[]},
+        '홍천':{h:50,x:280,y:62,c:[['서울',50]]},
+        '천안':{h:100,x:110,y:170,c:[['서울',100]]},
+        '음성':{h:100,x:275,y:150,c:[['서울',100],['홍천',80],['천안',40]]},
+        '제천':{h:110,x:430,y:120,c:[['홍천',60]]},
+        '안동':{h:120,x:535,y:205,c:[['제천',60]]},
+        '의성':{h:220,x:555,y:285,c:[['음성',200],['안동',50]]},
+        '상주':{h:200,x:350,y:230,c:[['음성',100],['안동',50]]},
+        '대전':{h:150,x:165,y:275,c:[['천안',50]]},
+        '대구':{h:240,x:340,y:360,c:[['대전',90]]},
+        '울산':{h:340,x:675,y:350,c:[['의성',120]]},
+        '부산':{h:320,x:560,y:395,c:[['상주',110],['대구',60],['울산',40]]}
       }
     },
     {
@@ -525,39 +558,18 @@
     },
     {
       tab:'실습 3',
-      mode:'value',better:'max',
+      mode:'cost',better:'min',
       graph:true,
-      title:'가치 그래프에서 같은 노드로 가는 더 좋은 경로가 발견될 때 g(n)을 갱신해 보세요.',
+      title:'비용을 평가하는 그래프에서 f(n)이 작은 노드를 선택하고 더 좋은 경로를 갱신해 보세요.',
       start:'A',goal:'G',
       nodes:{
-        A:{h:7,x:110,y:200,c:[['B',2],['C',5]]},
-        B:{h:6,x:275,y:95,c:[['C',1],['D',4]]},
-        C:{h:4,x:275,y:300,c:[['D',1],['E',5]]},
-        D:{h:3,x:450,y:170,c:[['F',2],['G',6]]},
+        A:{h:8,x:110,y:200,c:[['B',4],['C',7]]},
+        B:{h:6,x:275,y:95,c:[['C',1],['D',5]]},
+        C:{h:4,x:275,y:300,c:[['D',2],['E',6]]},
+        D:{h:3,x:450,y:170,c:[['F',2],['G',7]]},
         E:{h:2,x:450,y:330,c:[['G',3]]},
         F:{h:1,x:610,y:125,c:[['G',2]]},
         G:{h:0,x:650,y:285,c:[]}
-      }
-    },
-    {
-      tab:'활용 문제',
-      mode:'cost',better:'min',
-      graph:true,
-      title:'도시 간 이동 비용과 목표까지의 예상 비용을 이용하여 최적 경로를 찾아보세요.',
-      start:'부산',goal:'서울',
-      nodes:{
-        '서울':{h:0,x:82,y:68,c:[]},
-        '홍천':{h:50,x:280,y:62,c:[['서울',50]]},
-        '천안':{h:100,x:110,y:170,c:[['서울',100]]},
-        '음성':{h:100,x:275,y:150,c:[['서울',100],['홍천',80],['천안',40]]},
-        '제천':{h:110,x:430,y:120,c:[['홍천',60]]},
-        '안동':{h:120,x:535,y:205,c:[['제천',60]]},
-        '의성':{h:220,x:555,y:285,c:[['음성',200],['안동',50]]},
-        '상주':{h:200,x:350,y:230,c:[['음성',100],['안동',50]]},
-        '대전':{h:150,x:165,y:275,c:[['천안',50]]},
-        '대구':{h:240,x:340,y:360,c:[['대전',90]]},
-        '울산':{h:340,x:675,y:350,c:[['의성',120]]},
-        '부산':{h:320,x:560,y:395,c:[['상주',110],['대구',60],['울산',40]]}
       }
     }
   ];
@@ -1165,7 +1177,7 @@
     const structureName=pr.graph?'그래프':'트리';
 
     if(pr.mode==='value'){
-      formulaNote.innerHTML='<b>현재 실습 기준:</b> g(n)은 지금까지 얻은 가치, h(n)은 앞으로 기대되는 가치입니다. 따라서 <b>f(n)이 클수록 좋은 노드</b>입니다.';
+      formulaNote.innerHTML='<b>규칙:</b> 이 실습에서는 가치·보상을 평가하므로 <b>f(n)이 클수록 좋은 노드</b>라고 판단합니다.';
       rule2.innerHTML='<b>②</b> OPEN 리스트에서 <b>f(n)=g(n)+h(n)</b>을 비교하여 <b>가장 좋은 노드</b>를 선택합니다.';
       rule4.innerHTML='<b>④</b> 다음 노드의 누적 가치 g(n), 예상 가치 h(n), f(n)을 계산하여 OPEN에 추가합니다.';
       rule5.innerHTML='<b>⑤</b> <b>그래프 탐색에서는</b> 같은 노드로 가는 <b>더 큰 누적 가치</b>를 발견하면 g(n)과 f(n)을 갱신합니다.';
@@ -1174,12 +1186,19 @@
       hMeaning.textContent='노드 안 = 예상 가치 h(n)';
       practiceNote.innerHTML=`<strong>${pr.title}</strong> &nbsp; <b>평가 기준:</b> 가치·보상을 평가하므로 f(n)이 <b>클수록 좋은 노드</b>입니다. 노드를 선택한 뒤 g(n), f(n) 두 값만 직접 계산하세요.`;
     }else{
-      formulaNote.innerHTML='<b>활용 문제 기준:</b> g(n)은 지금까지 든 실제 비용, h(n)은 앞으로 들 예상 비용입니다. 따라서 <b>f(n)이 작을수록 좋은 노드</b>입니다.';
+      formulaNote.innerHTML='<b>규칙:</b> 비용을 평가하므로 <b>f(n)이 작을수록 좋은 노드</b>라고 판단합니다.';
       rule2.innerHTML='<b>②</b> OPEN 리스트에서 <b>f(n)=g(n)+h(n)</b>을 비교하여 <b>가장 좋은 노드</b>를 선택합니다.';
-      rule4.innerHTML='<b>④</b> 다음 도시의 누적 비용 g(n), 예상 비용 h(n), f(n)을 계산하여 OPEN에 추가합니다.';
-      rule5.innerHTML='<b>⑤</b> 같은 도시로 가는 <b>더 작은 누적 비용</b>을 발견하면 g(n)과 f(n)을 갱신합니다.';
+
+      if(pr.application){
+        rule4.innerHTML='<b>④</b> 다음 도시의 누적 비용 g(n), 예상 비용 h(n), f(n)을 계산하여 OPEN에 추가합니다.';
+        rule5.innerHTML='<b>⑤</b> 같은 도시로 가는 <b>더 작은 누적 비용</b>을 발견하면 g(n)과 f(n)을 갱신합니다.';
+      }else{
+        rule4.innerHTML='<b>④</b> 다음 노드의 누적 비용 g(n), 예상 비용 h(n), f(n)을 계산하여 OPEN에 추가합니다.';
+        rule5.innerHTML='<b>⑤</b> 같은 노드로 가는 <b>더 작은 누적 비용</b>을 발견하면 g(n)과 f(n)을 갱신합니다.';
+      }
+
       tieRule.innerHTML='<b>이 실습의 동점 규칙:</b> f(n)이 같으면 h(n)이 작은 노드를 먼저 선택하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.';
-      edgeMeaning.textContent='간선 숫자 = 이동 비용';
+      edgeMeaning.textContent=pr.application?'간선 숫자 = 이동 비용':'간선 숫자 = 이동 비용';
       hMeaning.textContent='노드 안 = 예상 비용 h(n)';
       practiceNote.innerHTML=`<strong>${pr.title}</strong> &nbsp; <b>평가 기준:</b> 비용 최소화 문제이므로 f(n)이 <b>작을수록 좋은 노드</b>입니다. 노드를 선택한 뒤 g(n), f(n) 두 값만 직접 계산하세요.`;
     }
