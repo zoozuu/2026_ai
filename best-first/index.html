@@ -265,7 +265,8 @@
         <span>노드 아래 표기 = 간단한 평가값(f=값)</span>
         <span>노란색 채움 + 번호 = 탐색한 노드</span>
         <span>초록 테두리 = 현재 OPEN 노드</span>
-        <span>붉은 테두리 = 방금 탐색한 노드의 자식 후보</span>
+        <span>붉은 테두리 = 방금 탐색한 노드의 추가 가능한 후보</span>
+        <span id="pathLegend">주황색 굵은 선 = 현재까지의 경로</span>
       </div>
 
       <div id="selectionBar" class="selection-bar">
@@ -461,6 +462,7 @@
   let currentNode=null, childCandidate=null;
   let listErrorCount=0, nextErrorCount=0;
   let history=[];
+  let parent={};
 
   const $ = s => document.querySelector(s);
   const NS='http://www.w3.org/2000/svg';
@@ -484,6 +486,7 @@
   const rule4=$('#rule4');
   const treeTitle=$('#treeTitle');
   const applicationPrompt=$('#applicationPrompt');
+  const pathLegend=$('#pathLegend');
 
   function isDone(){ return phase === 'done'; }
   function isSelectPhase(){ return phase === 'select'; }
@@ -525,6 +528,37 @@
 
   function sameArray(a,b){ return a.length===b.length && a.every((x,i)=>x===b[i]); }
 
+  function edgeKey(a,b){
+    return [a,b].sort().join('::');
+  }
+
+  function currentPath(){
+    const pr=p();
+    if(!pr.application || !currentNode) return [];
+    const path=[];
+    let cur=currentNode;
+    const seen=new Set();
+
+    while(cur && !seen.has(cur)){
+      seen.add(cur);
+      path.push(cur);
+      if(cur===pr.start) break;
+      cur=parent[cur];
+    }
+
+    if(path[path.length-1]!==pr.start) return [];
+    return path.reverse();
+  }
+
+  function currentPathEdgeSet(){
+    const path=currentPath();
+    const set=new Set();
+    for(let i=0;i<path.length-1;i++){
+      set.add(edgeKey(path[i],path[i+1]));
+    }
+    return set;
+  }
+
   function renderTabs(){
     tabs.innerHTML='';
     problems.forEach((item,i)=>{
@@ -548,17 +582,24 @@
     svg.innerHTML='';
 
     if(pr.graph && pr.edges){
+      const pathEdges=currentPathEdgeSet();
+
       pr.edges.forEach(([a,b,cost])=>{
         const n=pr.nodes[a], c=pr.nodes[b];
+        const isPath=pr.application && pathEdges.has(edgeKey(a,b));
+
         svg.appendChild(svgEl('line',{
           x1:n.x,y1:n.y,x2:c.x,y2:c.y,
-          stroke:'#cfd9d2','stroke-width':4,'stroke-linecap':'round'
+          stroke:isPath?'#e08b18':'#cfd9d2',
+          'stroke-width':isPath?8:4,
+          'stroke-linecap':'round'
         }));
 
         const mx=(n.x+c.x)/2, my=(n.y+c.y)/2;
         const label=svgEl('text',{
           x:mx,y:my-6,'text-anchor':'middle',
-          'font-size':11,'font-weight':800,fill:'#68756e',
+          'font-size':11,'font-weight':isPath?950:800,
+          fill:isPath?'#a85f08':'#68756e',
           class:'edge-label'
         });
         label.textContent=`${cost}분`;
@@ -575,8 +616,13 @@
       const exploredIndex=close.indexOf(name);
       const isExplored=exploredIndex>=0;
       const isSelectable=isSelectPhase() && open.includes(name);
-      const isChildOption=isEditPhase() && currentNode && pr.nodes[currentNode].c.includes(name);
-      const isChildPicked=isEditPhase() && childCandidate===name;
+      const isChildOption=
+        isEditPhase() &&
+        currentNode &&
+        pr.nodes[currentNode].c.includes(name) &&
+        !close.includes(name) &&
+        !workingOpen.includes(name);
+      const isChildPicked=isEditPhase() && childCandidate===name && isChildOption;
       let fill='#fff', stroke='#cfd9d2', sw=2;
 
       if(isExplored){ fill='#fff1b8'; stroke='#d79a1e'; sw=4; }
@@ -586,7 +632,7 @@
 
       const ariaValue=(pr.application && name===pr.start) ? `${name} 초기 상태` : `${name} 노드, 평가 함숫값 ${n.f}`;
       const g=svgEl('g',{role:'button',tabindex:'0','aria-label':ariaValue});
-      const clickable = !isDone() && (isSelectable || isEditPhase());
+      const clickable = !isDone() && (isSelectable || isChildOption);
       g.style.cursor = clickable ? 'pointer' : 'default';
       if(isSelectPhase() && !open.includes(name)) g.style.opacity='.55';
 
@@ -775,7 +821,12 @@
     if(node===p().goal){
       phase='done';
       recordState(`${close.length}단계`);
-      finish.textContent=`탐색 성공! 탐색 순서: ${close.join(' → ')}`;
+      if(p().application){
+        const route=currentPath();
+        finish.textContent=`탐색 성공! 경로: ${route.join(' → ')} · 탐색 순서: ${close.join(' → ')}`;
+      }else{
+        finish.textContent=`탐색 성공! 탐색 순서: ${close.join(' → ')}`;
+      }
       finish.className='finish show';
       openStatus.textContent='완료';
       openStatus.className='status ok';
@@ -792,10 +843,13 @@
     captureBtn.classList.remove('active');
     renderAll();
 
-    // 자식이 없는 막다른 길에서는 OPEN에 추가할 것이 없으므로 자동 확인
-    if(p().nodes[node].c.length === 0){
+    // 새로 OPEN에 추가할 후보가 하나도 없으면 자동으로 다음 단계로 진행
+    const expectedAfter=expectedOpenAfterChildren();
+    if(sameArray(workingOpen, expectedAfter)){
       const guardNode = node;
-      openFeedback.textContent='새로 OPEN에 추가할 노드가 없습니다. 기존 OPEN 리스트를 유지합니다. ✓';
+      openFeedback.textContent=p().application
+        ? '새로 OPEN에 추가할 인접 도시가 없습니다. 이미 탐색한 도시와 OPEN에 있는 도시는 제외합니다. ✓'
+        : '새로 OPEN에 추가할 노드가 없습니다. 기존 OPEN 리스트를 유지합니다. ✓';
       openFeedback.className='feedback good';
 
       setTimeout(()=>{
@@ -829,8 +883,30 @@
     }
 
     if(isEditPhase()){
+      const children=pr.nodes[currentNode].c;
+
+      if(close.includes(name)){
+        insertFeedback.textContent=`${name} 노드는 이미 탐색되어 CLOSE 리스트에 있습니다.`;
+        insertFeedback.className='feedback bad';
+        return;
+      }
+      if(workingOpen.includes(name)){
+        insertFeedback.textContent=`${name} 노드는 이미 OPEN 리스트에 있습니다.`;
+        insertFeedback.className='feedback bad';
+        return;
+      }
+      if(!children.includes(name)){
+        insertFeedback.textContent=pr.application
+          ? `${name} 도시는 ${currentNode}와 직접 연결된 추가 후보가 아닙니다.`
+          : `${name} 노드는 ${currentNode}의 자식 노드가 아닙니다.`;
+        insertFeedback.className='feedback bad';
+        return;
+      }
+
       childCandidate = name;
-      insertFeedback.textContent=`${name} 노드를 선택했습니다. 자식 노드라면 OPEN에 추가할 수 있습니다.`;
+      insertFeedback.textContent=pr.application
+        ? `${name} 도시를 선택했습니다. OPEN에 추가하세요.`
+        : `${name} 노드를 선택했습니다. OPEN에 추가하세요.`;
       insertFeedback.className='feedback';
       renderAll();
     }
@@ -858,7 +934,12 @@
     }
 
     workingOpen.push(childCandidate);
-    insertFeedback.textContent=`${childCandidate} 노드를 OPEN 리스트에 추가했습니다.`;
+    if(pr.application && parent[childCandidate]===undefined){
+      parent[childCandidate]=currentNode;
+    }
+    insertFeedback.textContent=pr.application
+      ? `${childCandidate} 도시를 OPEN 리스트에 추가했습니다.`
+      : `${childCandidate} 노드를 OPEN 리스트에 추가했습니다.`;
     insertFeedback.className='feedback good';
     childCandidate = null;
 
@@ -911,6 +992,28 @@
       workingOpen.length === expected.length &&
       workingOpen.every(x => expected.includes(x));
 
+    // 활용 문제에서는 인접 도시를 누른 순서가 달라도
+    // 필요한 도시가 모두 OPEN에 들어갔다면 자동으로 정답 순서로 정리해 다음 단계로 진행합니다.
+    if(p().application && sameMembers){
+      workingOpen=[...expected];
+      open=[...expected];
+      phase='select';
+      childCandidate=null;
+      listErrorCount=0;
+
+      insertFeedback.textContent='';
+      insertFeedback.className='feedback';
+      nextFeedback.textContent='';
+      nextFeedback.className='feedback';
+
+      openFeedback.textContent='✓ OPEN 리스트 완성! 다음 탐색 노드를 선택하세요.';
+      openFeedback.className='feedback good';
+
+      recordState(`${close.length}단계`);
+      renderAll();
+      return true;
+    }
+
     if(sameMembers){
       openFeedback.textContent='필요한 노드는 모두 들어갔습니다. OPEN에 들어간 순서를 다시 확인해 보세요.';
       openFeedback.className='feedback hint';
@@ -932,13 +1035,17 @@
 
     if(isEditPhase()){
       const children=pr.nodes[currentNode].c;
-      if(children.length===0){
-        return `힌트: ${currentNode}에서는 OPEN 리스트에 새로 추가할 노드가 없습니다. 기존 OPEN은 그대로 유지됩니다.`;
+      const addable=children.filter(n=>!close.includes(n) && !workingOpen.includes(n));
+
+      if(addable.length===0){
+        return p().application
+          ? `힌트: ${currentNode}에서 새로 OPEN에 추가할 인접 도시는 없습니다. 이미 탐색한 도시와 OPEN에 있는 도시는 제외합니다.`
+          : `힌트: ${currentNode}에서는 OPEN 리스트에 새로 추가할 노드가 없습니다. 기존 OPEN은 그대로 유지됩니다.`;
       }
       if(listErrorCount===0){
         return p().graph
-          ? `힌트: ${currentNode}와 직접 연결된 인접 도시는 ${children.join(', ')}입니다. 이미 탐색한 도시는 제외하세요.`
-          : `힌트: ${currentNode}의 자식 노드는 ${children.join(', ')}입니다.`;
+          ? `힌트: ${currentNode}에서 새로 OPEN에 추가할 수 있는 인접 도시는 ${addable.join(', ')}입니다.`
+          : `힌트: ${currentNode}의 자식 노드는 ${addable.join(', ')}입니다.`;
       }
       if(listErrorCount===1){
         return '힌트: 기존 OPEN 리스트에 남아 있던 노드는 그대로 유지되고, 여기에 자식 노드만 추가됩니다.';
@@ -1031,6 +1138,7 @@
     listErrorCount=0;
     nextErrorCount=0;
     history=[];
+    parent={[pr.start]:null};
     clearFeedback();
     finish.className='finish';
     captureBtn.disabled = true;
@@ -1047,6 +1155,7 @@
       rule4.innerHTML='<b>④</b> 선택한 도시와 연결된 인접 도시를 OPEN 리스트에 추가합니다.';
       treeTitle.textContent='경로 그래프';
       applicationPrompt.classList.add('show');
+      pathLegend.style.display='inline';
       svg.setAttribute('viewBox','0 0 760 430');
     }else if(pr.better==='min'){
       formulaMeaning.textContent='각 노드에 부여된 평가값';
@@ -1056,6 +1165,7 @@
       rule4.innerHTML='<b>④</b> 선택한 노드의 자식 노드를 찾아 OPEN 리스트에 추가합니다.';
       treeTitle.textContent='탐색 트리';
       applicationPrompt.classList.remove('show');
+      pathLegend.style.display='none';
       svg.setAttribute('viewBox','0 0 760 390');
     }else{
       formulaMeaning.textContent='각 노드에 부여된 평가값';
@@ -1065,6 +1175,7 @@
       rule4.innerHTML='<b>④</b> 선택한 노드의 자식 노드를 찾아 OPEN 리스트에 추가합니다.';
       treeTitle.textContent='탐색 트리';
       applicationPrompt.classList.remove('show');
+      pathLegend.style.display='none';
       svg.setAttribute('viewBox','0 0 760 390');
     }
 
