@@ -62,6 +62,30 @@
     margin:12px 0 16px;
   }
   .controls { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .state-info {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin:12px 0 14px;
+  }
+  .state-box {
+    background:#fff;
+    border:1px solid #dbe3ea;
+    border-radius:10px;
+    padding:11px 13px;
+    line-height:1.55;
+  }
+  .state-box .label {
+    display:block;
+    font-size:12px;
+    font-weight:900;
+    color:#64748b;
+    margin-bottom:3px;
+  }
+  .state-box strong { color:#111827; }
+  @media (max-width:640px){
+    .state-info{grid-template-columns:1fr;}
+  }
   button {
     border:1px solid #cbd5e1;
     background:white;
@@ -358,18 +382,77 @@
   padding:18px 28px 42px;
 }
 
-#p3 #linkSvg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  pointer-events:none;
-  overflow:visible;
-  shape-rendering:geometricPrecision;
+#p3 #linkSvg{display:none}
+#p3 .tree-root{
+  position:relative;
+  z-index:2;
+  display:flex;
+  justify-content:center;
 }
-#p3 .tree-root{position:relative;z-index:2;display:flex;justify-content:center}
-#p3 .tree-node{display:flex;flex-direction:column;align-items:center;position:relative}
-#p3 .children{display:flex;align-items:flex-start;justify-content:center;gap:34px;margin-top:58px}
+#p3 .tree-node{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:relative;
+}
+#p3 .tree-node > .node-card{
+  position:relative;
+  z-index:2;
+}
+
+/* 부모-자식 구조 자체에 간선을 붙여 좌표 계산 없이 항상 정확히 연결 */
+#p3 .children{
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  gap:0;
+  margin-top:58px;
+  position:relative;
+}
+
+/* 부모 카드 아래 중앙 → 가지가 갈라지는 지점 */
+#p3 .children::before{
+  content:"";
+  position:absolute;
+  top:-58px;
+  left:50%;
+  height:29px;
+  border-left:2px solid #7890aa;
+  transform:translateX(-50%);
+  z-index:0;
+}
+
+/* 각 자식 노드가 차지하는 영역. padding이 형제 간선의 연결 공간이 됨 */
+#p3 .children > .tree-node{
+  position:relative;
+  padding:0 18px;
+}
+
+/* 분기점 → 자식 카드 위 중앙 */
+#p3 .children > .tree-node::before{
+  content:"";
+  position:absolute;
+  top:-29px;
+  left:50%;
+  height:29px;
+  border-left:2px solid #7890aa;
+  transform:translateX(-50%);
+  z-index:0;
+}
+
+/* 형제 자식들의 중앙을 잇는 가로 간선 */
+#p3 .children > .tree-node::after{
+  content:"";
+  position:absolute;
+  top:-29px;
+  left:0;
+  right:0;
+  border-top:2px solid #7890aa;
+  z-index:0;
+}
+#p3 .children > .tree-node:first-child::after{left:50%}
+#p3 .children > .tree-node:last-child::after{right:50%}
+#p3 .children > .tree-node:only-child::after{display:none}
 
 #p3 .node-card{
   width:220px;
@@ -509,14 +592,8 @@
   transform-origin:top center;
 }
 @keyframes nodeDrop{
-  0%{
-    opacity:0;
-    transform:scale(.985);
-  }
-  100%{
-    opacity:1;
-    transform:scale(1);
-  }
+  0%{opacity:0}
+  100%{opacity:1}
 }
   68%{
     opacity:1;
@@ -774,6 +851,16 @@
 #captureToast.success{background:#166534}
 #captureToast.warn{background:#9a3412}
 
+
+#p3 .children > .tree-node.path-selected::before{
+  border-left-color:#514779;
+  border-left-width:3px;
+}
+#p3 .children > .tree-node.path-rejected::before,
+#p3 .children > .tree-node.path-rejected::after{
+  opacity:.45;
+}
+
 </style>
 </head>
 <body>
@@ -809,6 +896,16 @@
       웹앱이 <b>시작점을 무작위로 지정</b>합니다. 현재 위치의 <b>상·하·좌·우 칸이 모두 표시</b>됩니다.<br>
       그중에서 <b>현재 상태의 f(n)보다 더 높은 f(n)</b>을 가진 칸으로만 이동할 수 있습니다. 지나온 칸은 경로로 남습니다.
     </div>
+    <div class="state-info">
+      <div class="state-box">
+        <span class="label">초기 상태</span>
+        <strong><span id="initialFn1">-</span></strong>
+      </div>
+      <div class="state-box">
+        <span class="label">목표 상태</span>
+        <strong>12</strong>
+      </div>
+    </div>
     <div class="controls" data-html2canvas-ignore="true">
       <button onclick="resetGrid1()">랜덤 시작점 다시 뽑기</button>
       
@@ -842,6 +939,17 @@
       각 칸의 숫자는 해당 상태의 <b>평가 함숫값 f(n)</b>입니다. <b>f(n)이 클수록 더 좋은 상태</b>를 뜻합니다.<br>
       일부러 <b>전체 최고점이 아닌 곳에서 멈추는 경험</b>을 해보세요.<br>
       웹앱이 <b>시작 블록을 자동으로 지정</b>합니다. <b>현재 상태의 f(n)보다 더 높은 f(n)</b>을 가진 상·하·좌·우 칸으로만 이동해 보세요.
+    </div>
+    <div class="state-info">
+      <div class="state-box">
+        <span class="label">초기 상태</span>
+        <strong><span id="initialFn2">-</span></strong>
+      </div>
+      <div class="state-box">
+        <span class="label">목표 상태</span>
+        <strong>12</strong><br>
+        <span style="font-size:12px;color:#6b7280;">※ 지역 최댓값에서 먼저 탐색이 종료될 수 있습니다.</span>
+      </div>
     </div>
     <div class="controls" data-html2canvas-ignore="true">
       <button onclick="resetGrid2()">랜덤 시작점 다시 뽑기</button>
@@ -948,11 +1056,7 @@ document.querySelectorAll('.tab').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'p3') {
-      setTimeout(() => {
-        requestAnimationFrame(()=>requestAnimationFrame(()=>{
-          window.dispatchEvent(new Event('resize'));
-        }));
-      }, 80);
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
     }
   });
 });
@@ -1111,6 +1215,8 @@ function resetGrid1(){
   pos1=randomStart1();
   path1=[data1[pos1[0]][pos1[1]]];
   pathCells1=[[...pos1]];
+  const initialEl=document.getElementById('initialFn1');
+  if(initialEl) initialEl.textContent=data1[pos1[0]][pos1[1]];
   update1();
 }
 
@@ -1239,6 +1345,8 @@ function resetGrid2(){
   pos2=randomTrapStart2();
   path2=[data2[pos2[0]][pos2[1]]];
   pathCells2=[[...pos2]];
+  const initialEl=document.getElementById('initialFn2');
+  if(initialEl) initialEl.textContent=data2[pos2[0]][pos2[1]];
   update2();
 }
 
@@ -1469,7 +1577,6 @@ function verifyScore(node,inputEl,fromClicks=false){
     return;
   }
 
-  if(node.actual===8) node.selectedTiles.clear();
   node.checked=true;
 
   if(node===rootNode && selectedPath.length===0){
@@ -1538,7 +1645,7 @@ function chooseNode(node){
 
 function renderNode(node){
   const wrap=document.createElement('div');
-  wrap.className='tree-node'+(node.fresh?' new-child':'');
+  wrap.className='tree-node'+(node.fresh?' new-child':'')+(node.selected?' path-selected':'')+(node.rejected?' path-rejected':'');
   wrap.dataset.nodeId=node.id;
 
   const card=document.createElement('div');
@@ -1591,7 +1698,7 @@ function renderNode(node){
       const d=document.createElement('div');
       d.className='tile'+(v===0?' blank':'');
       d.textContent=v===0?'-':v;
-      if(node.actual!==8 && node.selectedTiles.has(r+'-'+c)) d.classList.add('score-selected');
+      if(node.selectedTiles.has(r+'-'+c)) d.classList.add('score-selected');
       board.appendChild(d);
     }
   }));
@@ -1754,80 +1861,8 @@ function initTreePan(){
   viewport.addEventListener('lostpointercapture',()=>stop());
 }
 
-function getBoxRelativeTo(el, ancestor){
-  let x=0, y=0;
-  let node=el;
-
-  while(node && node!==ancestor){
-    x += node.offsetLeft || 0;
-    y += node.offsetTop || 0;
-    node = node.offsetParent;
-  }
-
-  return {
-    x,
-    y,
-    width: el.offsetWidth || 0,
-    height: el.offsetHeight || 0
-  };
-}
-
 function drawLinks(){
-  const stage=document.getElementById('treeStage');
-  const svg=document.getElementById('linkSvg');
-  const treeRoot=document.getElementById('treeRoot');
-  if(!stage || !svg || !treeRoot || !rootNode) return;
-
-  const width=Math.ceil(Math.max(stage.scrollWidth, treeRoot.scrollWidth + 56));
-  const height=Math.ceil(Math.max(stage.scrollHeight, treeRoot.scrollHeight + 56));
-
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('width', width);
-  svg.setAttribute('height', height);
-  svg.innerHTML='';
-
-  const NS='http://www.w3.org/2000/svg';
-
-  function walk(node){
-    if(node.parent && node.element && node.parent.element){
-      const p=getBoxRelativeTo(node.parent.element, stage);
-      const c=getBoxRelativeTo(node.element, stage);
-
-      const x1=p.x + p.width / 2;
-      const y1=p.y + p.height;
-      const x2=c.x + c.width / 2;
-      const y2=c.y;
-
-      const dy=Math.max(24, y2 - y1);
-      const curve=Math.min(42, Math.max(18, dy * 0.38));
-
-      const path=document.createElementNS(NS,'path');
-      path.setAttribute(
-        'd',
-        `M ${x1} ${y1} C ${x1} ${y1 + curve}, ${x2} ${y2 - curve}, ${x2} ${y2}`
-      );
-      path.setAttribute('fill','none');
-      path.setAttribute('stroke', node.selected ? '#514779' : '#5d7897');
-      path.setAttribute('stroke-width', node.selected ? '3.2' : '2.1');
-      path.setAttribute('stroke-linecap','round');
-      path.setAttribute('stroke-linejoin','round');
-      path.setAttribute('vector-effect','non-scaling-stroke');
-      if(node.rejected) path.setAttribute('opacity','.45');
-      if(node.fresh) path.classList.add('tree-link-new');
-      svg.appendChild(path);
-
-      const joint=document.createElementNS(NS,'circle');
-      joint.setAttribute('cx', x1);
-      joint.setAttribute('cy', y1);
-      joint.setAttribute('r', node.selected ? '3.2' : '2.6');
-      joint.setAttribute('fill', node.selected ? '#514779' : '#5d7897');
-      if(node.rejected) joint.setAttribute('opacity','.45');
-      svg.appendChild(joint);
-    }
-    node.children.forEach(walk);
-  }
-
-  walk(rootNode);
+  // 간선은 CSS로 트리 구조 자체에 연결되어 별도 좌표 계산이 필요하지 않습니다.
 }
 
 function getPhase(){
@@ -1897,7 +1932,7 @@ function render(){
   document.getElementById('scoreText').textContent=getScoreSummary();
 
   updatePhaseUI();
-  requestAnimationFrame(()=>requestAnimationFrame(drawLinks));
+  requestAnimationFrame(drawLinks);
 }
 
 function reset(){
@@ -1935,7 +1970,7 @@ document.getElementById('helpBtn').addEventListener('click',()=>{
   else panel.setAttribute('hidden','');
 });
 document.getElementById('resetBtn').addEventListener('click',reset);
-window.addEventListener('resize',()=>requestAnimationFrame(()=>requestAnimationFrame(drawLinks)));
+window.addEventListener('resize',()=>requestAnimationFrame(drawLinks));
 
 renderStaticBoard(document.getElementById('goalBoard'),GOAL);
 initTreePan();
@@ -2119,7 +2154,7 @@ reset();
             cloneViewport.style.maxWidth='none';
             cloneViewport.style.height='auto';
           }
-              if(cloneStage){
+          if(cloneStage){
             cloneStage.style.maxWidth='none';
           }
         }
