@@ -484,16 +484,16 @@
       tab:'개념 실습',
       mode:'value',better:'max',
       guided:true,
-      title:'가치를 평가하는 트리에서 f(n)=g(n)+h(n)을 함께 계산해 봅시다.',
+      title:'f(n)을 계산하고, OPEN에 후보가 남아 있어도 목표 상태를 찾으면 탐색이 끝나는지 확인해 봅시다.',
       start:'A',goal:'H',
       nodes:{
         A:{h:7,x:380,y:42,c:[['B',2],['C',4]]},
         B:{h:6,x:210,y:145,c:[['D',4],['E',3]]},
-        C:{h:3,x:550,y:145,c:[['F',3],['G',2]]},
+        C:{h:8,x:550,y:145,c:[['F',3],['G',2]]},
         D:{h:5,x:120,y:275,c:[]},
         E:{h:4,x:300,y:275,c:[]},
         F:{h:4,x:470,y:275,c:[]},
-        G:{h:2,x:630,y:275,c:[['H',2]]},
+        G:{h:6,x:630,y:275,c:[['H',6]]},
         H:{h:0,x:630,y:365,c:[]}
       }
     },
@@ -522,17 +522,17 @@
     {
       tab:'실습 1',
       mode:'value',better:'max',
-      title:'트리에서 OPEN의 f(n)을 비교하여 다음 탐색 노드를 선택해 보세요.',
+      title:'OPEN의 f(n)을 비교하고, 필요한 노드만 탐색하여 목표 상태에 도달해 보세요.',
       start:'S',goal:'H',
       nodes:{
         S:{h:10,x:380,y:42,c:[['A',2],['B',4],['C',3]]},
         A:{h:7,x:150,y:145,c:[['D',4],['E',6]]},
-        B:{h:5,x:380,y:145,c:[['F',2],['G',5]]},
+        B:{h:9,x:380,y:145,c:[['F',2],['G',5]]},
         C:{h:8,x:610,y:145,c:[['I',2]]},
         D:{h:6,x:75,y:275,c:[]},
         E:{h:3,x:225,y:275,c:[]},
         F:{h:4,x:330,y:275,c:[]},
-        G:{h:3,x:455,y:275,c:[['H',3]]},
+        G:{h:7,x:455,y:275,c:[['H',4]]},
         I:{h:6,x:610,y:275,c:[]},
         H:{h:0,x:455,y:365,c:[]}
       }
@@ -697,7 +697,7 @@
       if(isChildPicked){fill='#fff6e9';stroke='#b76b16';sw=5}
 
       const g=svgEl('g',{role:'button',tabindex:'0'});
-      const clickable=!isDone()&&(isSelectable||isEditPhase());
+      const clickable=!isDone()&&(isSelectable||isChildOption);
       g.style.cursor=clickable?'pointer':'default';
       if(isSelectPhase()&&!open.includes(name))g.style.opacity='.58';
 
@@ -761,12 +761,23 @@
         bt.textContent=String(exploredIndex+1);g.appendChild(badge);g.appendChild(bt);
       }
 
+      // 클릭 영역을 넓혀 노드의 글자/원 주변 어디를 눌러도 안정적으로 선택되도록 합니다.
+      const hit=svgEl('circle',{
+        cx:n.x,cy:n.y,r:36,
+        fill:'transparent',
+        'pointer-events':clickable?'all':'none'
+      });
+      hit.style.cursor=clickable?'pointer':'default';
       if(clickable){
-        g.addEventListener('click',()=>handleTreeClick(name));
+        hit.addEventListener('click',e=>{
+          e.stopPropagation();
+          handleTreeClick(name);
+        });
         g.addEventListener('keydown',e=>{
           if(e.key==='Enter'||e.key===' '){e.preventDefault();handleTreeClick(name)}
         });
       }
+      g.appendChild(hit);
       svg.appendChild(g);
     });
   }
@@ -911,9 +922,10 @@
       phase='done';
       recordState(`${close.length}단계`);
       const route=reconstructRoute(node);
+      const remainingOpen=open.length ? ` · 탐색하지 않고 OPEN에 남은 노드: ${open.join(', ')}` : '';
       finish.textContent=p().mode==='value'
-        ? `탐색 성공! 경로: ${route.join(' → ')} · 누적 가치 g(${node})=${gScore[node]}`
-        : `탐색 성공! 경로: ${route.join(' → ')} · 총 비용 g(${node})=${gScore[node]}`;
+        ? `탐색 성공! 경로: ${route.join(' → ')} · 누적 가치 g(${node})=${gScore[node]}${remainingOpen}`
+        : `탐색 성공! 경로: ${route.join(' → ')} · 총 비용 g(${node})=${gScore[node]}${remainingOpen}`;
       finish.className='finish show';
       captureBtn.disabled=false;captureBtn.classList.add('active');
       renderAll();return;
