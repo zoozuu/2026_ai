@@ -310,7 +310,7 @@
   border:1px solid #dfe3da;
   border-radius:18px;
   padding:20px 18px 32px;
-  overflow-x:auto;
+  overflow:visible;
 }
 #p3 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#64748b;margin-bottom:16px}
 #p3 .swatch{display:inline-block;width:13px;height:13px;border:2px solid;border-radius:4px;margin-right:5px;vertical-align:-2px}
@@ -318,14 +318,61 @@
 #p3 .swatch.selected{border-color:#514779}
 #p3 .swatch.rejected{border-color:#d1d5db;opacity:.55}
 
-#p3 .tree-stage{position:relative;min-width:1000px;padding:8px 20px 36px}
-#p3 #linkSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+
+#p3 .tree-pan-hint{
+  margin:0 0 9px;
+  text-align:center;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+}
+#p3 .tree-viewport{
+  position:relative;
+  width:100%;
+  max-height:640px;
+  overflow:auto;
+  border:1px solid #dde3e8;
+  border-radius:13px;
+  background:rgba(255,255,255,.78);
+  cursor:grab;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+#p3 .tree-viewport.dragging{
+  cursor:grabbing;
+  user-select:none;
+}
+#p3 .tree-viewport button,
+#p3 .tree-viewport input,
+#p3 .tree-viewport .node-card{
+  cursor:auto;
+}
+#p3 .tree-viewport .tile.moveable,
+#p3 .tree-viewport .tile.score-selectable,
+#p3 .tree-viewport .node-card.selectable-choice{
+  cursor:pointer;
+}
+#p3 .tree-stage{
+  position:relative;
+  min-width:1000px;
+  padding:18px 28px 42px;
+}
+
+#p3 #linkSvg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  overflow:visible;
+  shape-rendering:geometricPrecision;
+}
 #p3 .tree-root{position:relative;z-index:2;display:flex;justify-content:center}
 #p3 .tree-node{display:flex;flex-direction:column;align-items:center;position:relative}
 #p3 .children{display:flex;align-items:flex-start;justify-content:center;gap:34px;margin-top:58px}
 
 #p3 .node-card{
-  width:198px;
+  width:220px;
   border:3px solid #7daa4b;
   border-radius:14px;
   background:#f7faef;
@@ -343,19 +390,57 @@
   box-shadow:0 0 0 3px rgba(81,71,121,.08);
 }
 #p3 .node-card.rejected{opacity:.48;filter:saturate(.75)}
-#p3 .node-card.goal{
-  border-color:#514779;
-  background:#fffdf7;
+#p3 .node-card.goal-node{
+  border-color:#7daa4b;
+  background:#f7faef;
+  box-shadow:none;
 }
-#p3 .node-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-#p3 .node-num{display:inline-flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;background:#514779;color:#fff;font-size:13px;font-weight:900}
+#p3 .node-card.goal-node .node-role{
+  background:#eaf2df;
+  color:#5e6b56;
+  white-space:nowrap;
+  word-break:keep-all;
+}
+#p3 .node-card.goal-node .board{
+  border-color:#b9c99e;
+}
+#p3 .node-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:9px;
+  width:100%;
+  flex-wrap:nowrap;
+}
+#p3 .node-num{
+  display:inline-flex;
+  width:30px;
+  min-width:30px;
+  height:30px;
+  border-radius:50%;
+  align-items:center;
+  justify-content:center;
+  background:#514779;
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+  flex:0 0 auto;
+}
 #p3 .node-role{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
   font-size:12px;
   color:#5e6b56;
   font-weight:850;
   background:#eaf2df;
-  padding:3px 7px;
+  padding:3px 8px;
   border-radius:6px;
+  white-space:nowrap;
+  word-break:keep-all;
+  line-height:1.2;
+  flex:0 0 auto;
 }
 
 #p3 .board{
@@ -363,7 +448,7 @@
   grid-template-columns:repeat(3,52px);
   gap:0;
   width:max-content;
-  margin:auto;
+  margin:10px auto 0;
   border:1px solid #b9c99e;
 }
 #p3 .tile{
@@ -426,8 +511,13 @@
 @keyframes nodeDrop{
   0%{
     opacity:0;
-    transform:translateY(-28px) scale(.96);
+    transform:scale(.985);
   }
+  100%{
+    opacity:1;
+    transform:scale(1);
+  }
+}
   68%{
     opacity:1;
     transform:translateY(5px) scale(1.01);
@@ -465,7 +555,14 @@
 #p3 .move-hint{margin-top:8px;text-align:center;color:#2563eb;font-size:12px;font-weight:850}
 #p3 .progress{margin-top:6px;text-align:center;color:#64748b;font-size:12px;font-weight:800}
 
-#p3 .score-area{margin-top:10px;padding-top:10px;border-top:1px solid #eef2f7}
+#p3 .score-area{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid #eef2f7;
+  display:block;
+  width:100%;
+  clear:both;
+}
 #p3 .score-locked{
   margin-top:10px;
   padding:9px 8px;
@@ -478,8 +575,25 @@
   font-weight:800;
   line-height:1.5;
 }
-#p3 .score-guide{font-size:12px;color:#64748b;line-height:1.45;text-align:center;margin-bottom:7px}
-#p3 .fn-display{display:flex;justify-content:center;align-items:center;gap:6px;font-weight:900;font-size:16px}
+#p3 .score-guide{
+  font-size:12px;
+  color:#64748b;
+  line-height:1.45;
+  text-align:center;
+  margin-bottom:7px;
+  display:block;
+  width:100%;
+}
+#p3 .fn-display{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  font-weight:900;
+  font-size:16px;
+  width:100%;
+  flex-wrap:nowrap;
+}
 #p3 .fn-value{display:inline-flex;min-width:35px;height:34px;padding:0 9px;border-radius:9px;align-items:center;justify-content:center;background:#f1f5f9;border:1px solid #cbd5e1;font-size:18px}
 #p3 .fn-value.ok{background:#dcfce7;border-color:#22c55e;color:#166534}
 #p3 .fn-input{width:66px;height:38px;border:1.5px solid #cbd5e1;border-radius:9px;text-align:center;font-size:18px;font-weight:900;background:#fff}
@@ -747,7 +861,7 @@
     <h1>③ 8-퍼즐 언덕 등반 탐색</h1>
     <div class="capture-controls">
       <button id="captureBtn3" class="capture-btn" type="button" disabled
-              data-target="captureArea3" data-status="status"
+              data-target="captureArea3Tree" data-status="status"
               title="탐색 완료 후 캡처할 수 있습니다.">
         캡처하기
       </button>
@@ -793,7 +907,7 @@
   </div>
 </section>
 
-<section class="workspace">
+<section class="workspace" id="captureArea3Tree">
   <div id="confetti" aria-hidden="true"></div>
 
   <div class="legend">
@@ -802,9 +916,14 @@
     <span><i class="swatch rejected"></i>선택하지 않은 후보</span>
   </div>
 
-  <div id="treeStage" class="tree-stage">
-    <svg id="linkSvg" aria-hidden="true"></svg>
-    <div class="tree-root"><div id="treeRoot"></div></div>
+  <div class="tree-pan-hint" data-html2canvas-ignore="true">
+    빈 공간을 마우스로 드래그하면 탐색 트리를 좌우·상하로 이동해서 볼 수 있습니다.
+  </div>
+  <div id="treeViewport" class="tree-viewport">
+    <div id="treeStage" class="tree-stage">
+      <svg id="linkSvg" aria-hidden="true"></svg>
+      <div class="tree-root"><div id="treeRoot"></div></div>
+    </div>
   </div>
 
   <div id="status" class="status" aria-live="polite"></div>
@@ -829,7 +948,11 @@ document.querySelectorAll('.tab').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'p3') {
-      setTimeout(() => window.dispatchEvent(new Event('resize')), 80);
+      setTimeout(() => {
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          window.dispatchEvent(new Event('resize'));
+        }));
+      }, 80);
     }
   });
 });
@@ -1346,6 +1469,7 @@ function verifyScore(node,inputEl,fromClicks=false){
     return;
   }
 
+  if(node.actual===8) node.selectedTiles.clear();
   node.checked=true;
 
   if(node===rootNode && selectedPath.length===0){
@@ -1425,13 +1549,16 @@ function renderNode(node){
   if(node.fresh) card.classList.add('new-result');
   if(node.selected) card.classList.add('selected');
   if(node.rejected) card.classList.add('rejected');
-  if(node.actual===8) card.classList.add('goal');
+  if(node.actual===8) card.classList.add('goal-node');
 
   node.element=card;
 
   const head=document.createElement('div');
   head.className='node-head';
-  head.innerHTML='<span class="node-num">'+node.id+'</span><span class="node-role">'+(node===rootNode?'초기 상태':node===activeNode?'현재 상태':'후보 상태')+'</span>';
+  const roleText=node.actual===8
+    ? '목표 상태'
+    : (node===rootNode?'초기 상태':node===activeNode?'현재 상태':'후보 상태');
+  head.innerHTML='<span class="node-num">'+node.id+'</span><span class="node-role">'+roleText+'</span>';
   card.appendChild(head);
 
   const board=document.createElement('div');
@@ -1464,7 +1591,7 @@ function renderNode(node){
       const d=document.createElement('div');
       d.className='tile'+(v===0?' blank':'');
       d.textContent=v===0?'-':v;
-      if(node.selectedTiles.has(r+'-'+c)) d.classList.add('score-selected');
+      if(node.actual!==8 && node.selectedTiles.has(r+'-'+c)) d.classList.add('score-selected');
       board.appendChild(d);
     }
   }));
@@ -1509,7 +1636,7 @@ function renderNode(node){
     scoreArea.appendChild(line);
     const note=document.createElement('div');
     note.className='node-note';
-    note.textContent='✓ 계산 확인';
+    note.textContent=node.actual===8 ? '✓ 목표 상태 도달' : '✓ 계산 확인';
     scoreArea.appendChild(note);
   }else{
     const guide=document.createElement('div');
@@ -1581,37 +1708,125 @@ function renderNode(node){
   return wrap;
 }
 
+function initTreePan(){
+  const viewport=document.getElementById('treeViewport');
+  if(!viewport || viewport.dataset.panReady==='1') return;
+  viewport.dataset.panReady='1';
+
+  let dragging=false;
+  let pointerId=null;
+  let startX=0,startY=0,startLeft=0,startTop=0;
+
+  viewport.addEventListener('pointerdown',(e)=>{
+    if(e.button!==0) return;
+    // 퍼즐 조각/입력칸/경로 선택 카드의 클릭 동작은 그대로 유지
+    if(e.target.closest('button,input,.node-card')) return;
+
+    dragging=true;
+    pointerId=e.pointerId;
+    startX=e.clientX;
+    startY=e.clientY;
+    startLeft=viewport.scrollLeft;
+    startTop=viewport.scrollTop;
+    viewport.classList.add('dragging');
+    viewport.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+  });
+
+  viewport.addEventListener('pointermove',(e)=>{
+    if(!dragging || e.pointerId!==pointerId) return;
+    viewport.scrollLeft=startLeft-(e.clientX-startX);
+    viewport.scrollTop=startTop-(e.clientY-startY);
+    e.preventDefault();
+  });
+
+  const stop=(e)=>{
+    if(!dragging) return;
+    if(e && pointerId!==null && e.pointerId!==pointerId) return;
+    dragging=false;
+    viewport.classList.remove('dragging');
+    try{ viewport.releasePointerCapture?.(pointerId); }catch(_){}
+    pointerId=null;
+  };
+
+  viewport.addEventListener('pointerup',stop);
+  viewport.addEventListener('pointercancel',stop);
+  viewport.addEventListener('lostpointercapture',()=>stop());
+}
+
+function getBoxRelativeTo(el, ancestor){
+  let x=0, y=0;
+  let node=el;
+
+  while(node && node!==ancestor){
+    x += node.offsetLeft || 0;
+    y += node.offsetTop || 0;
+    node = node.offsetParent;
+  }
+
+  return {
+    x,
+    y,
+    width: el.offsetWidth || 0,
+    height: el.offsetHeight || 0
+  };
+}
+
 function drawLinks(){
   const stage=document.getElementById('treeStage');
   const svg=document.getElementById('linkSvg');
-  const sRect=stage.getBoundingClientRect();
+  const treeRoot=document.getElementById('treeRoot');
+  if(!stage || !svg || !treeRoot || !rootNode) return;
 
-  svg.setAttribute('viewBox','0 0 '+stage.scrollWidth+' '+stage.scrollHeight);
+  const width=Math.ceil(Math.max(stage.scrollWidth, treeRoot.scrollWidth + 56));
+  const height=Math.ceil(Math.max(stage.scrollHeight, treeRoot.scrollHeight + 56));
+
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
   svg.innerHTML='';
+
+  const NS='http://www.w3.org/2000/svg';
 
   function walk(node){
     if(node.parent && node.element && node.parent.element){
-      const a=node.parent.element.getBoundingClientRect();
-      const b=node.element.getBoundingClientRect();
+      const p=getBoxRelativeTo(node.parent.element, stage);
+      const c=getBoxRelativeTo(node.element, stage);
 
-      const x1=a.left-sRect.left+a.width/2+stage.scrollLeft;
-      const y1=a.top-sRect.top+a.height+stage.scrollTop;
-      const x2=b.left-sRect.left+b.width/2+stage.scrollLeft;
-      const y2=b.top-sRect.top+stage.scrollTop;
+      const x1=p.x + p.width / 2;
+      const y1=p.y + p.height;
+      const x2=c.x + c.width / 2;
+      const y2=c.y;
 
-      const mid=(y1+y2)/2;
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d',`M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`);
+      const dy=Math.max(24, y2 - y1);
+      const curve=Math.min(42, Math.max(18, dy * 0.38));
+
+      const path=document.createElementNS(NS,'path');
+      path.setAttribute(
+        'd',
+        `M ${x1} ${y1} C ${x1} ${y1 + curve}, ${x2} ${y2 - curve}, ${x2} ${y2}`
+      );
       path.setAttribute('fill','none');
       path.setAttribute('stroke', node.selected ? '#514779' : '#5d7897');
-      path.setAttribute('stroke-width', node.selected ? '3.4' : '2.2');
+      path.setAttribute('stroke-width', node.selected ? '3.2' : '2.1');
       path.setAttribute('stroke-linecap','round');
+      path.setAttribute('stroke-linejoin','round');
+      path.setAttribute('vector-effect','non-scaling-stroke');
       if(node.rejected) path.setAttribute('opacity','.45');
       if(node.fresh) path.classList.add('tree-link-new');
       svg.appendChild(path);
+
+      const joint=document.createElementNS(NS,'circle');
+      joint.setAttribute('cx', x1);
+      joint.setAttribute('cy', y1);
+      joint.setAttribute('r', node.selected ? '3.2' : '2.6');
+      joint.setAttribute('fill', node.selected ? '#514779' : '#5d7897');
+      if(node.rejected) joint.setAttribute('opacity','.45');
+      svg.appendChild(joint);
     }
     node.children.forEach(walk);
   }
+
   walk(rootNode);
 }
 
@@ -1682,7 +1897,7 @@ function render(){
   document.getElementById('scoreText').textContent=getScoreSummary();
 
   updatePhaseUI();
-  requestAnimationFrame(drawLinks);
+  requestAnimationFrame(()=>requestAnimationFrame(drawLinks));
 }
 
 function reset(){
@@ -1720,9 +1935,10 @@ document.getElementById('helpBtn').addEventListener('click',()=>{
   else panel.setAttribute('hidden','');
 });
 document.getElementById('resetBtn').addEventListener('click',reset);
-window.addEventListener('resize',()=>requestAnimationFrame(drawLinks));
+window.addEventListener('resize',()=>requestAnimationFrame(()=>requestAnimationFrame(drawLinks)));
 
 renderStaticBoard(document.getElementById('goalBoard'),GOAL);
+initTreePan();
 reset();
 })();
 </script>
@@ -1819,18 +2035,63 @@ reset();
     btn.disabled=true;
     btn.textContent='캡처 중...';
 
+    const viewport=target.querySelector('.tree-viewport');
+    const stage=target.querySelector('.tree-stage');
+    const treeRoot=target.querySelector('#treeRoot');
+
+    // 8-퍼즐은 현재 보이는 스크롤 영역이 아니라 트리 전체를 캡처하기 위해
+    // 캡처하는 동안에만 스크롤 창을 전체 크기로 펼친다.
+    let restoreTree=null;
+
     try{
-      const stage=target.querySelector('.tree-stage');
-      const captureWidth=Math.max(
-        target.scrollWidth,
-        target.clientWidth,
-        stage ? stage.scrollWidth + 48 : 0
-      );
-      const captureHeight=Math.max(target.scrollHeight,target.clientHeight);
+      if(viewport && stage){
+        const fullTreeWidth=Math.ceil(Math.max(
+          stage.scrollWidth,
+          stage.getBoundingClientRect().width,
+          treeRoot ? treeRoot.scrollWidth : 0
+        ));
+        const fullTreeHeight=Math.ceil(Math.max(
+          stage.scrollHeight,
+          stage.getBoundingClientRect().height,
+          treeRoot ? treeRoot.scrollHeight : 0
+        ));
+
+        restoreTree={
+          viewportStyle:viewport.getAttribute('style'),
+          stageStyle:stage.getAttribute('style'),
+          targetStyle:target.getAttribute('style'),
+          left:viewport.scrollLeft,
+          top:viewport.scrollTop
+        };
+
+        viewport.scrollLeft=0;
+        viewport.scrollTop=0;
+        viewport.style.overflow='visible';
+        viewport.style.maxHeight='none';
+        viewport.style.width=fullTreeWidth+'px';
+        viewport.style.maxWidth='none';
+        viewport.style.height=fullTreeHeight+'px';
+
+        stage.style.width=fullTreeWidth+'px';
+        stage.style.minWidth=fullTreeWidth+'px';
+
+        target.style.width=(fullTreeWidth+40)+'px';
+        target.style.maxWidth='none';
+        target.style.overflow='visible';
+
+        // 크기가 바뀐 트리에 맞춰 연결선을 다시 계산한다.
+        window.dispatchEvent(new Event('resize'));
+        await new Promise(resolve=>requestAnimationFrame(
+          ()=>requestAnimationFrame(resolve)
+        ));
+      }
+
+      const captureWidth=Math.ceil(Math.max(target.scrollWidth,target.getBoundingClientRect().width));
+      const captureHeight=Math.ceil(Math.max(target.scrollHeight,target.getBoundingClientRect().height));
 
       const preferredScale=Math.min(2,window.devicePixelRatio||1.5);
       const maxDimension=Math.max(captureWidth,captureHeight);
-      const safeScale=Math.max(.75,Math.min(preferredScale,12000/Math.max(1,maxDimension)));
+      const safeScale=Math.max(.65,Math.min(preferredScale,12000/Math.max(1,maxDimension)));
 
       const canvas=await html2canvas(target,{
         backgroundColor:'#ffffff',
@@ -1841,17 +2102,25 @@ reset();
         height:captureHeight,
         windowWidth:Math.max(document.documentElement.clientWidth,captureWidth),
         windowHeight:Math.max(document.documentElement.clientHeight,captureHeight),
+        scrollX:0,
+        scrollY:-window.scrollY,
         onclone:(doc)=>{
-          const cloneStage=doc.querySelector('#'+target.id+' .tree-stage');
           const cloneTarget=doc.getElementById(target.id);
-          if(cloneStage && stage){
-            cloneStage.style.overflow='visible';
-            cloneStage.style.width=stage.scrollWidth+'px';
-            cloneStage.style.maxWidth='none';
-          }
-          if(cloneTarget && stage){
-            cloneTarget.style.width=captureWidth+'px';
+          const cloneViewport=cloneTarget?.querySelector('.tree-viewport');
+          const cloneStage=cloneTarget?.querySelector('.tree-stage');
+
+          if(cloneTarget){
+            cloneTarget.style.overflow='visible';
             cloneTarget.style.maxWidth='none';
+          }
+          if(cloneViewport){
+            cloneViewport.style.overflow='visible';
+            cloneViewport.style.maxHeight='none';
+            cloneViewport.style.maxWidth='none';
+            cloneViewport.style.height='auto';
+          }
+              if(cloneStage){
+            cloneStage.style.maxWidth='none';
           }
         }
       });
@@ -1862,6 +2131,20 @@ reset();
       console.error(err);
       showCaptureToast('자동 복사가 차단되었습니다. GitHub Pages(https)에서 열거나 브라우저의 클립보드 권한을 허용해 주세요.','warn');
     }finally{
+      if(restoreTree && viewport && stage){
+        const restoreAttr=(el,value)=>{
+          if(value===null) el.removeAttribute('style');
+          else el.setAttribute('style',value);
+        };
+        restoreAttr(viewport,restoreTree.viewportStyle);
+        restoreAttr(stage,restoreTree.stageStyle);
+        restoreAttr(target,restoreTree.targetStyle);
+
+        viewport.scrollLeft=restoreTree.left;
+        viewport.scrollTop=restoreTree.top;
+        window.dispatchEvent(new Event('resize'));
+      }
+
       btn.textContent=originalText;
       syncCaptureButton(btn);
     }
