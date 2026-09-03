@@ -184,8 +184,52 @@
     .history-table tr:last-child td{border-bottom:none}
     .history-table td:nth-child(2){color:var(--green-dark);font-weight:800}
     .history-table td:nth-child(3){color:var(--yellow-text);font-weight:800}
-    .finish{display:none;margin-top:7px;background:var(--blue-soft);color:#315b8a;border-radius:9px;padding:8px;font-size:.78rem;font-weight:800}
+    .finish{
+      display:none;
+      margin-top:10px;
+      background:#eef6ff;
+      color:#234d78;
+      border:2px solid #9fc3e8;
+      border-radius:13px;
+      padding:12px 14px;
+      font-weight:800;
+    }
     .finish.show{display:block}
+    .finish-title{
+      font-size:.9rem;
+      font-weight:950;
+      margin-bottom:8px;
+      color:#315b8a;
+    }
+    .finish-route{
+      font-size:.88rem;
+      font-weight:850;
+      margin-bottom:10px;
+      color:#526b82;
+      line-height:1.5;
+    }
+    .finish-order-label{
+      display:block;
+      font-size:.78rem;
+      font-weight:900;
+      color:#667b8e;
+      margin-bottom:5px;
+    }
+    .finish-order{
+      display:block;
+      padding:9px 10px;
+      border-radius:9px;
+      background:#fff;
+      border:1px solid #c4d8ec;
+      color:#173f69;
+      font-size:1.08rem;
+      font-weight:950;
+      line-height:1.55;
+      letter-spacing:.01em;
+      word-break:keep-all;
+    }
+    body.teacher-view .finish-order{font-size:1.25rem}
+
 
     body.teacher-view .app{width:min(1500px,calc(100% - 16px))}
     body.teacher-view .concept{display:none}
@@ -209,7 +253,7 @@
   <div class="topbar">
     <div>
       <h1>최상 우선 탐색 실습</h1>
-      <p class="subtitle">시작 노드는 자동으로 OPEN에 들어가며, 다음 탐색 노드를 선택하면 CLOSE는 자동으로 기록됩니다. 학생은 자식 노드를 OPEN에 추가하며 탐색을 완성합니다. OPEN 리스트가 완성되면 자동으로 다음 단계로 넘어갑니다.</p>
+      <p class="subtitle">시작 노드는 자동으로 OPEN에 들어가며, 다음 탐색 노드를 선택하면 CLOSE는 자동으로 기록됩니다. 학생은 필요한 자식 노드를 OPEN에 추가하며 탐색을 완성합니다. 추가 순서는 상관없으며, 필요한 노드가 모두 들어가면 자동으로 다음 단계로 넘어갑니다.</p>
     </div>
     <div class="top-actions">
       <button id="teacherViewBtn" class="teacher-view-btn" type="button">🔍 확대</button>
@@ -234,7 +278,7 @@
           <div id="rule4" class="rule-step"><b>④</b> 선택한 노드의 자식 노드를 찾아 OPEN 리스트에 추가합니다.</div>
           <div class="rule-step"><b>⑤</b> 목표 노드를 선택할 때까지 위 과정을 반복합니다.</div>
         </div>
-        <div class="tie-note"><b>동점 규칙:</b> 평가 함숫값이 같은 노드가 여러 개이면, <b>OPEN 리스트에 먼저 들어온 노드</b>를 먼저 선택합니다.</div>
+        <div class="tie-note"><b>OPEN 순서:</b> 노드를 OPEN에 추가하는 순서 자체는 정답 여부에 영향을 주지 않습니다. 단, <b>평가 함숫값이 같은 노드끼리는 OPEN에 먼저 들어온 노드</b>를 먼저 선택합니다.</div>
       </div>
     </div>
   </section>
@@ -366,18 +410,18 @@
       better:'min',
       start:'부산', goal:'서울',
       nodes:{
-        '서울':{f:0,x:85,y:48,c:['홍천','음성','천안']},
-        '홍천':{f:50,x:285,y:48,c:['서울','음성','제천']},
-        '천안':{f:100,x:105,y:155,c:['서울','음성','대전']},
-        '음성':{f:100,x:255,y:135,c:['서울','홍천','천안','상주','의성']},
-        '제천':{f:110,x:430,y:125,c:['홍천','안동']},
-        '대전':{f:150,x:150,y:260,c:['천안','대구']},
-        '상주':{f:200,x:340,y:238,c:['음성','안동','부산']},
-        '안동':{f:120,x:525,y:215,c:['제천','상주']},
-        '의성':{f:220,x:540,y:292,c:['음성','울산']},
-        '대구':{f:240,x:330,y:340,c:['대전','부산']},
-        '울산':{f:340,x:675,y:335,c:['의성','부산']},
-        '부산':{f:999,x:575,y:392,c:['대구','상주','울산']}
+        '서울':{f:0,x:70,y:70,c:['홍천','음성','천안']},
+        '홍천':{f:50,x:300,y:72,c:['서울','음성','제천']},
+        '천안':{f:100,x:88,y:182,c:['서울','음성','대전']},
+        '음성':{f:100,x:210,y:160,c:['서울','홍천','천안','상주','의성']},
+        '제천':{f:110,x:385,y:138,c:['홍천','안동']},
+        '안동':{f:120,x:555,y:205,c:['제천','의성']},
+        '상주':{f:200,x:360,y:258,c:['음성','부산']},
+        '의성':{f:220,x:525,y:282,c:['음성','안동','울산']},
+        '대전':{f:150,x:145,y:295,c:['천안','대구']},
+        '대구':{f:240,x:405,y:370,c:['대전','부산']},
+        '울산':{f:340,x:665,y:368,c:['의성','부산']},
+        '부산':{f:999,x:565,y:410,c:['상주','대구','울산']}
       },
       edges:[
         ['서울','홍천',50],
@@ -390,11 +434,11 @@
         ['음성','상주',100],
         ['음성','의성',200],
         ['제천','안동',60],
-        ['상주','안동',50],
+        ['의성','안동',50],
         ['대전','대구',90],
         ['상주','부산',110],
-        ['대구','부산',60],
         ['의성','울산',120],
+        ['대구','부산',60],
         ['울산','부산',40]
       ]
     },
@@ -823,9 +867,18 @@
       recordState(`${close.length}단계`);
       if(p().application){
         const route=currentPath();
-        finish.textContent=`탐색 성공! 경로: ${route.join(' → ')} · 탐색 순서: ${close.join(' → ')}`;
+        finish.innerHTML=`
+          <div class="finish-title">✓ 탐색 성공!</div>
+          <div class="finish-route"><b>찾은 경로</b> &nbsp; ${route.join(' → ')}</div>
+          <span class="finish-order-label">탐색 순서</span>
+          <span class="finish-order">${close.join(' → ')}</span>
+        `;
       }else{
-        finish.textContent=`탐색 성공! 탐색 순서: ${close.join(' → ')}`;
+        finish.innerHTML=`
+          <div class="finish-title">✓ 탐색 성공!</div>
+          <span class="finish-order-label">탐색 순서</span>
+          <span class="finish-order">${close.join(' → ')}</span>
+        `;
       }
       finish.className='finish show';
       openStatus.textContent='완료';
@@ -992,11 +1045,11 @@
       workingOpen.length === expected.length &&
       workingOpen.every(x => expected.includes(x));
 
-    // 활용 문제에서는 인접 도시를 누른 순서가 달라도
-    // 필요한 도시가 모두 OPEN에 들어갔다면 자동으로 정답 순서로 정리해 다음 단계로 진행합니다.
-    if(p().application && sameMembers){
-      workingOpen=[...expected];
-      open=[...expected];
+    // OPEN 리스트는 '어떤 노드가 들어 있는가'가 핵심이므로
+    // 자식(인접 노드)을 추가한 순서는 정답 여부에 영향을 주지 않습니다.
+    // 단, 평가 함숫값이 같은 노드끼리는 실제로 OPEN에 먼저 들어온 노드를 먼저 선택합니다.
+    if(sameMembers){
+      open=[...workingOpen];
       phase='select';
       childCandidate=null;
       listErrorCount=0;
@@ -1012,11 +1065,6 @@
       recordState(`${close.length}단계`);
       renderAll();
       return true;
-    }
-
-    if(sameMembers){
-      openFeedback.textContent='필요한 노드는 모두 들어갔습니다. OPEN에 들어간 순서를 다시 확인해 보세요.';
-      openFeedback.className='feedback hint';
     }
 
     return false;
@@ -1048,7 +1096,7 @@
           : `힌트: ${currentNode}의 자식 노드는 ${addable.join(', ')}입니다.`;
       }
       if(listErrorCount===1){
-        return '힌트: 기존 OPEN 리스트에 남아 있던 노드는 그대로 유지되고, 여기에 자식 노드만 추가됩니다.';
+        return '힌트: 기존 OPEN에 남아 있던 노드는 유지하고, 새로 추가할 수 있는 자식(인접) 노드를 모두 넣으면 됩니다. 추가 순서는 상관없습니다.';
       }
       return `힌트: 이 단계의 정답 OPEN 리스트는 기존 OPEN에 ${children.join(', ')}를 뒤에 추가한 형태입니다.`;
     }
@@ -1156,7 +1204,7 @@
       treeTitle.textContent='경로 그래프';
       applicationPrompt.classList.add('show');
       pathLegend.style.display='inline';
-      svg.setAttribute('viewBox','0 0 760 430');
+      svg.setAttribute('viewBox','0 0 760 455');
     }else if(pr.better==='min'){
       formulaMeaning.textContent='각 노드에 부여된 평가값';
       formulaRule.textContent='규칙: 평가 함숫값 f(C)가 작을수록 좋은 노드라고 판단합니다.';
