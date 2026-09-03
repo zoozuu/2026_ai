@@ -153,15 +153,15 @@
       display:flex;justify-content:center;gap:13px;flex-wrap:wrap;
       color:var(--muted);font-size:.75rem;margin-top:5px
     }
-    .node-result-bg{
-      fill:#ffffff;
-      stroke:#b9d0c1;
+    .node-f-bg{
+      fill:#fffdf8;
+      stroke:#d8c39c;
       stroke-width:1.2;
     }
-    .node-result-text{
-      font-size:10px;
-      font-weight:900;
-      fill:#315b4a;
+    .node-f-text{
+      font-size:11px;
+      font-weight:950;
+      fill:#8b5d12;
     }
 
     .selection-bar{
@@ -329,7 +329,7 @@
         <div class="formula">
           <strong>f(n) = g(n) + h(n)</strong>
           <div class="formula-sub">
-            <span><b>g(n)</b> = 초기 상태에서 현재 노드 n까지 누적된 값</span>
+            <span><b>g(n)</b> = 초기 상태에서 현재 노드 n에 도달할 때까지 이동한 값</span>
             <span><b>h(n)</b> = 현재 노드 n에서 목표 상태까지의 예상 값</span>
           </div>
         </div>
@@ -380,7 +380,7 @@
       <div class="tree-note">
         <span id="edgeMeaning">간선 숫자 = 획득 가치</span>
         <span id="hMeaning">노드 안 = 예상 가치 h(n)</span>
-        <span>계산 완료 후 아래 = g(n), h(n), f(n)</span>
+        <span>계산 완료 후 노드 주변 = f(n)</span>
         <span>노란색 + 번호 = 탐색한 노드</span>
         <span>초록 테두리 = 현재 OPEN 노드</span>
         <span>붉은 테두리 = 추가 가능한 다음 노드</span>
@@ -715,25 +715,36 @@
       hT.textContent=`h=${n.h}`;g.appendChild(hT);
 
       if(gScore[name]!==undefined && (open.includes(name)||isExplored||name===pr.start)){
-        const resultY=n.y+43;
-        const resultWidth=116;
+        const useLeft = n.x > 500;
+        const useLower = n.y < 85;
+
+        const labelText = `f=${f(name)}`;
+        const resultWidth = Math.max(40, 14 + labelText.length * 7);
+        const resultHeight = 20;
+
+        const boxX = useLeft
+          ? n.x - 18 - resultWidth
+          : n.x + 18;
+        const boxY = useLower
+          ? n.y + 8
+          : n.y - 30;
 
         const resultBg=svgEl('rect',{
-          x:n.x-resultWidth/2,
-          y:resultY-10,
+          x:boxX,
+          y:boxY,
           width:resultWidth,
-          height:20,
+          height:resultHeight,
           rx:9,
-          class:'node-result-bg'
+          class:'node-f-bg'
         });
 
         const ft=svgEl('text',{
-          x:n.x,
-          y:resultY+4,
+          x:boxX + resultWidth/2,
+          y:boxY + 14,
           'text-anchor':'middle',
-          class:'node-result-text'
+          class:'node-f-text'
         });
-        ft.textContent=`g=${gScore[name]} · h=${h(name)} · f=${f(name)}`;
+        ft.textContent=labelText;
 
         g.appendChild(resultBg);
         g.appendChild(ft);
