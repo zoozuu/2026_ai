@@ -353,7 +353,7 @@
           <div id="rule5" class="rule-step"><b>⑤</b> <b>그래프 탐색에서는</b> 같은 노드로 가는 더 좋은 경로를 발견하면 g(n)과 f(n)을 갱신합니다.</div>
           <div class="rule-step"><b>⑥</b> 목표 상태를 선택할 때까지 반복합니다.</div>
         </div>
-        <div id="tieRule" class="tie-note"><b>이 실습의 동점 규칙:</b> f(n)이 같으면 h(n)을 비교하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.</div>
+        <div id="tieRule" class="tie-note"><b>OPEN 추가 순서:</b> 필요한 노드를 OPEN에 넣는 순서 자체는 정답 여부에 영향을 주지 않습니다. <b>동점 규칙:</b> f(n)이 같으면 h(n)을 비교하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.</div>
       </div>
     </div>
   </section>
@@ -880,16 +880,25 @@
     return {expected,expectedG,expectedParent};
   }
 
-  function sameArray(a,b){return a.length===b.length&&a.every((x,i)=>x===b[i])}
+  function sameMembers(a,b){
+    return a.length===b.length &&
+      a.every(x=>b.includes(x)) &&
+      b.every(x=>a.includes(x));
+  }
 
   function autoCompleteOpen(){
     if(!isEditPhase())return false;
     const {expected,expectedG,expectedParent}=expectedExpansion();
 
-    const sameNames=sameArray(workingOpen,expected);
+    // OPEN은 나열 순서가 아니라 '포함된 후보 노드'가 핵심입니다.
+    // 따라서 필요한 노드가 모두 들어 있고 계산값이 정확하면,
+    // 학생이 노드를 추가한 순서와 관계없이 다음 단계로 진행합니다.
+    const sameNames=sameMembers(workingOpen,expected);
     const sameCosts=expected.every(n=>gScore[n]===expectedG[n]);
 
     if(sameNames&&sameCosts){
+      // 실제 학생이 추가한 OPEN 순서는 그대로 유지합니다.
+      // f와 h까지 같은 완전 동점 상황에서만 이 순서가 동점 규칙에 사용됩니다.
       open=[...workingOpen];
       gScore={...expectedG};
       parent={...expectedParent};
@@ -1204,7 +1213,7 @@
       rule2.innerHTML='<b>②</b> OPEN 리스트에서 <b>f(n)=g(n)+h(n)</b>을 비교하여 <b>가장 좋은 노드</b>를 선택합니다.';
       rule4.innerHTML='<b>④</b> 다음 노드의 누적 가치 g(n), 예상 가치 h(n), f(n)을 계산하여 OPEN에 추가합니다.';
       rule5.innerHTML='<b>⑤</b> <b>그래프 탐색에서는</b> 같은 노드로 가는 <b>더 큰 누적 가치</b>를 발견하면 g(n)과 f(n)을 갱신합니다.';
-      tieRule.innerHTML='<b>이 실습의 동점 규칙:</b> f(n)이 같으면 h(n)이 큰 노드를 먼저 선택하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.';
+      tieRule.innerHTML='<b>OPEN 추가 순서:</b> 순서와 관계없이 필요한 노드를 모두 넣으면 됩니다. <b>동점 규칙:</b> f(n)이 같으면 h(n)이 큰 노드를 먼저 선택하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.';
       edgeMeaning.textContent='간선 숫자 = 획득 가치';
       hMeaning.textContent='노드 안 = 예상 가치 h(n)';
       practiceNote.innerHTML=`<strong>${pr.title}</strong> &nbsp; <b>평가 기준:</b> 가치·보상을 평가하므로 f(n)이 <b>클수록 좋은 노드</b>입니다. 노드를 선택한 뒤 g(n), f(n) 두 값만 직접 계산하세요.`;
@@ -1220,7 +1229,7 @@
         rule5.innerHTML='<b>⑤</b> 같은 노드로 가는 <b>더 작은 누적 비용</b>을 발견하면 g(n)과 f(n)을 갱신합니다.';
       }
 
-      tieRule.innerHTML='<b>이 실습의 동점 규칙:</b> f(n)이 같으면 h(n)이 작은 노드를 먼저 선택하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.';
+      tieRule.innerHTML='<b>OPEN 추가 순서:</b> 순서와 관계없이 필요한 노드를 모두 넣으면 됩니다. <b>동점 규칙:</b> f(n)이 같으면 h(n)이 작은 노드를 먼저 선택하고, 그래도 같으면 OPEN에 먼저 들어온 노드를 선택합니다.';
       edgeMeaning.textContent=pr.application?'간선 숫자 = 이동 비용':'간선 숫자 = 이동 비용';
       hMeaning.textContent='노드 안 = 예상 비용 h(n)';
       practiceNote.innerHTML=`<strong>${pr.title}</strong> &nbsp; <b>평가 기준:</b> 비용 최소화 문제이므로 f(n)이 <b>작을수록 좋은 노드</b>입니다. 노드를 선택한 뒤 g(n), f(n) 두 값만 직접 계산하세요.`;
