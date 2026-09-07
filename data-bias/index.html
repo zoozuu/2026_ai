@@ -91,7 +91,7 @@ input[type=range]{width:100%}
 .step4top{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px;align-items:stretch}
 .step4top .card{min-height:0}
 .step4scatter{margin-top:12px}
-.step4scatter svg{max-height:310px}
+.step4scatter svg{max-height:none;height:auto}
 .step4performance svg{max-height:190px}
 .statRows{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
 .statRow{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;padding:8px 7px;border:1px solid var(--line);border-radius:11px;background:#fff;text-align:center}
@@ -354,7 +354,7 @@ function progress(n){
 
 function scatter(svgId,data,pairs=false){
   const svg=document.getElementById(svgId);
-  const W=680,H=pairs?300:390, ml=54,mr=18,mt=18,mb=42;
+  const W=680,H=pairs?300:(svgId==='afterScatter'?330:390), ml=54,mr=18,mt=18,mb=42;
   const xMin=50,xMax=100,yMin=0,yMax=5;
   const sx=x=>ml+(x-xMin)/(xMax-xMin)*(W-ml-mr);
   const sy=y=>H-mb-(y-yMin)/(yMax-yMin)*(H-mt-mb);
