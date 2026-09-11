@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>기계학습 알고리즘 실습실</title>
+<style>
+:root{
+  --bg:#f7f8fb;
+  --text:#172033;
+  --muted:#667085;
+  --panel:#e7e8ec;
+  --line:#d9dde5;
+  --shadow:0 14px 34px rgba(35,48,76,.08);
+  --blue:#b9dde4;
+  --pink:#f4ccdf;
+  --yellow:#fdeab4;
+  --lavender:#cfd8ee;
+  --green:#d9f6b4;
+  --sky:#b9dff2;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Pretendard,"Noto Sans KR",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+body{padding:28px}
+.app{width:min(1500px,100%);margin:0 auto}
+.header{text-align:center;margin:0 0 36px}
+.header h1{margin:0;font-size:clamp(2rem,4.4vw,3.7rem);font-weight:950;letter-spacing:-.04em;color:#111827}
+.header p{margin:10px 0 0;color:var(--muted);font-size:clamp(.95rem,1.6vw,1.08rem)}
+
+.board{display:grid;grid-template-columns:minmax(0,1.48fr) minmax(330px,1fr);gap:24px;align-items:start}
+.category{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:32px;min-height:640px;padding:92px 28px 34px;box-shadow:var(--shadow);overflow:visible}
+.category.unsupervised{min-height:390px}
+.category-title{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:#fff;border-radius:0 0 30px 30px;padding:12px 78px 18px;font-weight:950;font-size:clamp(2rem,3.4vw,3rem);letter-spacing:-.04em;white-space:nowrap;box-shadow:0 8px 20px rgba(35,48,76,.03)}
+.category-sub{position:absolute;top:66px;left:50%;transform:translateX(-50%);font-size:.8rem;color:#8a94a6;font-weight:800;white-space:nowrap}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:26px 28px;align-items:start}
+.card{position:relative;min-height:84px;border-radius:16px;text-decoration:none;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:17px 22px;font-size:clamp(1.25rem,2vw,1.72rem);font-weight:950;letter-spacing:-.03em;box-shadow:0 5px 12px rgba(15,23,42,.04);border:1px solid rgba(255,255,255,.65);transition:transform .16s ease, box-shadow .16s ease, filter .16s ease;overflow:hidden}
+.card::after{content:"실습하기 →";position:absolute;right:18px;bottom:10px;font-size:.72rem;font-weight:850;color:rgba(15,23,42,.48);opacity:0;transform:translateY(4px);transition:.16s}
+.card:hover{transform:translateY(-4px);box-shadow:0 12px 22px rgba(15,23,42,.12);filter:saturate(1.05)}
+.card:hover::after{opacity:1;transform:none}
+.card:focus-visible{outline:4px solid rgba(71,119,201,.25);outline-offset:3px}
+.card.linear{background:var(--blue);grid-column:1;}
+.card.tree{background:var(--pink);grid-column:2;margin-top:76px}
+.card.logistic{background:var(--yellow);grid-column:1;margin-top:16px}
+.card.svm{background:var(--lavender);grid-column:2;margin-top:76px}
+.card.knn{background:var(--green);grid-column:1;margin-top:16px}
+
+.unsup-cards{display:grid;grid-template-columns:1fr;gap:20px;padding:18px 70px 0}
+.card.kmeans{background:var(--sky);min-height:84px}
+
+.footer{margin-top:18px;text-align:center;color:#98a2b3;font-size:.78rem}
+.note{margin-top:18px;background:#fff;border:1px solid #e4e8ef;border-radius:16px;padding:13px 16px;color:#6b7280;font-size:.86rem;line-height:1.55;text-align:center}
+.note strong{color:#475569}
+
+@media(max-width:1050px){
+  body{padding:18px}
+  .board{grid-template-columns:1fr}
+  .category,.category.unsupervised{min-height:auto;padding-bottom:28px}
+  .unsup-cards{padding:18px 0 0}
+}
+@media(max-width:700px){
+  body{padding:10px}
+  .header{margin-bottom:26px}
+  .category{border-radius:24px;padding:82px 14px 20px}
+  .category-title{padding:10px 36px 15px;border-radius:0 0 24px 24px}
+  .category-sub{top:60px}
+  .cards{grid-template-columns:1fr;gap:14px}
+  .card.linear,.card.tree,.card.logistic,.card.svm,.card.knn{grid-column:1;margin-top:0}
+  .card{min-height:72px;font-size:1.25rem}
+  .unsup-cards{padding-top:0}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1>🤖 기계학습 알고리즘 실습실</h1>
+    <p>알고리즘을 클릭하여 직접 조작하고 결과를 확인해 보세요.</p>
+  </header>
+
+  <main class="board">
+    <section class="category supervised" aria-labelledby="supervisedTitle">
+      <div class="category-title" id="supervisedTitle">지도학습</div>
+      <div class="category-sub">정답이 있는 데이터를 학습하는 방법</div>
+
+      <div class="cards">
+        <a class="card linear" href="./linear-regression/" aria-label="선형 회귀 실습으로 이동">선형 회귀</a>
+        <a class="card tree" href="./decision-tree/" aria-label="의사결정트리 실습으로 이동">의사결정트리</a>
+        <a class="card logistic" href="./logistic-regression/" aria-label="로지스틱 회귀 실습으로 이동">로지스틱 회귀</a>
+        <a class="card svm" href="./svm/" aria-label="서포트 벡터 머신 실습으로 이동">서포트 벡터 머신</a>
+        <a class="card knn" href="./knn/" aria-label="k-최근접 이웃 실습으로 이동">k-최근접 이웃</a>
+      </div>
+    </section>
+
+    <section class="category unsupervised" aria-labelledby="unsupervisedTitle">
+      <div class="category-title" id="unsupervisedTitle">비지도학습</div>
+      <div class="category-sub">정답 없이 데이터의 구조를 찾는 방법</div>
+
+      <div class="unsup-cards">
+        <a class="card kmeans" href="./kmeans/" aria-label="k-평균 실습으로 이동">k-평균</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="note">
+    <strong>GitHub Pages 사용 팁:</strong> 각 실습 폴더 안에 <code>index.html</code>을 넣으면 위 링크 구조를 그대로 사용할 수 있습니다.
+  </div>
+
+  <div class="footer">Machine Learning Practice Hub</div>
+</div>
+</body>
+</html>
