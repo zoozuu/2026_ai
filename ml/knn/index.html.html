@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>동물 K-최근접 이웃(KNN) 분류 실험실</title>
+<style>
+:root{
+  --bg:#f5f7fb;--panel:#ffffff;--ink:#1f2a44;--muted:#69758a;--line:#dfe6f2;
+  --blue:#4777c9;--blue2:#335ca8;--soft:#eaf2ff;--green:#25845f;--greenSoft:#eaf7f0;
+  --purple:#4447b8;--yellow:#fff5d8;--shadow:0 14px 36px rgba(31,55,98,.09);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+button,input{font:inherit}
+.app{width:min(1280px,100%);margin:auto;padding:18px}
+.hero{background:#f9fbff;border:1px solid var(--line);border-radius:24px;padding:20px 22px;box-shadow:var(--shadow)}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{margin:0;color:#17386f;font-size:clamp(1.7rem,3.2vw,2.45rem)}
+.hero p{margin:8px 0 0;color:#5e6d84;line-height:1.65}
+.badge{padding:8px 11px;border:1px solid #d7e2f2;background:#fff;border-radius:999px;color:#59708f;font-size:.87rem;font-weight:800}
+.controls{margin-top:16px;display:grid;grid-template-columns:minmax(280px,1fr) auto;gap:14px;align-items:center}
+.control-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.kline{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.kline strong{font-size:1rem}.kvalue{background:var(--purple);color:#fff;border-radius:11px;padding:5px 11px;font-size:1.05rem;font-weight:900}
+input[type=range]{width:100%;accent-color:var(--purple)}
+.klabels{display:flex;justify-content:space-between;color:#8a94a6;font-size:.78rem;font-weight:700;margin-top:3px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.btn{border:0;border-radius:13px;padding:11px 14px;font-weight:850;cursor:pointer;min-height:44px;transition:.16s}.btn:hover{transform:translateY(-1px)}.btn.primary{background:var(--blue);color:#fff}.btn.secondary{background:#edf2f8;color:#53657d}.btn.ghost{background:#fff;border:1px solid var(--line);color:#5a6880}
+
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;margin-top:18px;align-items:start}
+.panel{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.canvas-panel{padding:16px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.panel-head h2{margin:0;font-size:1.12rem}.hint{font-size:.85rem;color:#6b778b;font-weight:700}
+.canvas-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:420px;border-radius:20px;overflow:hidden;border:1px solid #cfdbeb;background:linear-gradient(180deg,#eef4ff 0%,#e6eef8 100%)}
+canvas{position:absolute;inset:0;display:block;width:100%;height:100%;cursor:crosshair;touch-action:none;z-index:1}
+.animal-layer{position:absolute;inset:0;z-index:3;pointer-events:none}
+.animal-icon{position:absolute;transform:translate(-50%,-50%);font-size:30px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.10));user-select:none;white-space:nowrap}
+.animal-icon.near{background:rgba(255,255,255,.82);border:2px solid rgba(68,71,184,.68);border-radius:50%;padding:5px;box-shadow:0 2px 8px rgba(45,55,100,.10)}
+.q-icon{position:absolute;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:#4447b8;color:#fff;border:3px solid #fff;display:grid;place-items:center;font:900 23px/1 system-ui,sans-serif;box-shadow:0 2px 8px rgba(40,49,74,.22)}
+.q-k{position:absolute;left:50%;top:52px;transform:translateX(-50%);color:#28314a;font:800 16px/1 system-ui,sans-serif;white-space:nowrap}
+.float-guide{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;background:rgba(255,255,255,.90);border:1px solid #cbd8eb;border-radius:17px;padding:12px 15px;text-align:center;box-shadow:0 8px 20px rgba(42,67,109,.10);color:#4f6383;font-weight:850}.float-guide small{display:block;margin-top:4px;color:#7d899b;font-weight:650}
+.legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:11px;font-size:.86rem;color:#5f6f86;font-weight:750}.legend span{display:flex;align-items:center;gap:5px}.dot{width:11px;height:11px;border-radius:50%;display:inline-block}.dot.g{background:#f1b72e}.dot.e{background:#7c8796}.dot.m{background:#9a6434}.dot.q{background:var(--purple)}
+.side{padding:16px;display:flex;flex-direction:column;gap:12px}.side h3{margin:0;font-size:1.02rem}.result{border:1px solid #dfe6ef;border-radius:17px;padding:15px;background:#fafcff}.result .small{font-size:.8rem;color:#718097;font-weight:750}.result-main{margin-top:6px;font-size:1.45rem;font-weight:950;color:#28385a}.result-main .animal{font-size:1.9rem;vertical-align:-3px}.vote{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.vote-box{background:#fff;border:1px solid #e2e8f1;border-radius:13px;padding:10px;text-align:center}.vote-box .k{font-size:.78rem;color:#748097}.vote-box .v{font-size:1.1rem;font-weight:900;margin-top:2px}
+.info{background:#f8fbff;border:1px solid #e3eaf4;border-radius:16px;padding:13px}.info strong{display:block;margin-bottom:6px;color:#355486}.info p{margin:0;color:#64738a;font-size:.88rem;line-height:1.6}.neighbor-list{display:flex;flex-direction:column;gap:7px;max-height:270px;overflow:auto}.neighbor{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid #e5eaf1;border-radius:12px;padding:8px 10px;background:#fff;font-size:.86rem}.neighbor .rank{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#eef2ff;color:#424a9d;font-weight:900;font-size:.78rem}.neighbor .left{display:flex;align-items:center;gap:7px}.neighbor .dist{color:#718097;font-variant-numeric:tabular-nums}
+.tip{font-size:.82rem;color:#76849a;line-height:1.55;background:#fff8e7;border:1px solid #f0dfb4;border-radius:14px;padding:10px}
+@media(max-width:980px){.main{grid-template-columns:1fr}.side{order:-1}.controls{grid-template-columns:1fr}.actions{justify-content:flex-start}.canvas-wrap{min-height:340px}}
+@media(max-width:620px){.app{padding:10px}.hero{padding:16px}.canvas-panel,.side{padding:12px}.canvas-wrap{min-height:300px}.vote{grid-template-columns:1fr}.legend{font-size:.8rem}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>🦒🐘🐵 동물 K-최근접 이웃(KNN) 분류 실험실</h1>
+        <p>기린, 코끼리, 원숭이 데이터가 여러 군집으로 흩어져 있습니다. <strong>q점</strong>을 직접 찍고, <strong>가장 가까운 k개의 이웃</strong>이 어떤 동물인지 확인해 보세요.</p>
+      </div>
+      <span class="badge">최근접 이웃의 다수결로 분류</span>
+    </div>
+
+    <div class="controls">
+      <div class="control-card">
+        <div class="kline"><strong>k값 조절</strong><span class="kvalue" id="kValue">k = 3</span></div>
+        <input id="kSlider" type="range" min="1" max="9" step="2" value="3" />
+        <div class="klabels"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="regenBtn" type="button">🎲 동물 그룹 새로 만들기</button>
+        <button class="btn secondary" id="clearQBtn" type="button">q점 지우기</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="main">
+    <div class="panel canvas-panel">
+      <div class="panel-head">
+        <h2>동물 분포와 q점</h2>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <div class="hint">그래프를 클릭하면 q점이 놓입니다.</div>
+          <button class="btn ghost" id="captureBtn" type="button">📷 캡처하기</button>
+        </div>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="knnCanvas"></canvas>
+        <div class="animal-layer" id="animalLayer"></div>
+        <div class="float-guide" id="guide">그래프에 q점을 찍어보세요<small>q점을 다시 클릭하면 위치를 바꿀 수 있습니다.</small></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot g"></i> 기린 그룹</span>
+        <span><i class="dot e"></i> 코끼리 그룹</span>
+        <span><i class="dot m"></i> 원숭이 그룹</span>
+        <span><i class="dot q"></i> q점</span>
+        
+      </div>
+    </div>
+
+    <aside class="panel side">
+      <h3>분류 결과</h3>
+      <div class="result" id="resultBox">
+        <div class="small">현재 q점의 예측</div>
+        <div class="result-main" id="resultMain">q점을 먼저 찍어주세요</div>
+        <div class="vote">
+          <div class="vote-box"><div class="k">기린 표</div><div class="v" id="gVote">-</div></div>
+          <div class="vote-box"><div class="k">코끼리 표</div><div class="v" id="eVote">-</div></div>
+          <div class="vote-box"><div class="k">원숭이 표</div><div class="v" id="mVote">-</div></div>
+        </div>
+      </div>
+
+      <div class="info">
+        <strong>현재 선택된 이웃</strong>
+        <p>q점에서 가까운 순서대로 k개의 동물을 보여줍니다. 동점이 나면 더 가까운 이웃이 포함된 동물이 우선됩니다.</p>
+      </div>
+      <div class="neighbor-list" id="neighborList">
+        <div class="neighbor"><span class="left">q점을 찍으면 이웃 정보가 표시됩니다.</span></div>
+      </div>
+
+      <div class="tip">💡 <strong>탐구 포인트:</strong> 동물들이 겹치는 경계 부근에 q점을 두고 k를 1 → 3 → 5 → 7로 바꾸며 분류 결과가 어떻게 달라지는지 비교해 보세요.</div>
+    </aside>
+  </section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(()=>{
+  const canvas = document.getElementById('knnCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('canvasWrap');
+  const slider = document.getElementById('kSlider');
+  const kValue = document.getElementById('kValue');
+  const guide = document.getElementById('guide');
+  const animalLayer = document.getElementById('animalLayer');
+  const captureBtn = document.getElementById('captureBtn');
+  const resultMain = document.getElementById('resultMain');
+  const gVote = document.getElementById('gVote');
+  const eVote = document.getElementById('eVote');
+  const mVote = document.getElementById('mVote');
+  const neighborList = document.getElementById('neighborList');
+  let animals = [];
+  let q = null;
+  let cssW = 0, cssH = 0;
+
+  const animalsMeta = {
+    giraffe: { label:'기린', emoji:'🦒', color:'rgba(255, 205, 61, 0.20)', strong:'#f1b72e' },
+    elephant:{ label:'코끼리', emoji:'🐘', color:'rgba(146, 156, 173, 0.20)', strong:'#7c8796' },
+    monkey:  { label:'원숭이', emoji:'🐵', color:'rgba(201, 146, 95, 0.20)', strong:'#9a6434' }
+  };
+
+  function randn(){
+    let u=0,v=0;
+    while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+  function makeCluster(type, cx, cy, count, spreadX=.05, spreadY=.06, bounds={x1:.04,x2:.96,y1:.08,y2:.92}){
+    const result=[];
+    for(let i=0;i<count;i++){
+      result.push({
+        type,
+        x: clamp(cx + randn()*spreadX, bounds.x1, bounds.x2),
+        y: clamp(cy + randn()*spreadY, bounds.y1, bounds.y2)
+      });
+    }
+    return result;
+  }
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function generateAnimals(){
+    animals=[];
+    // 예시 산점도처럼 한 종류가 하나의 덩어리로만 모이지 않도록 여러 소군집으로 배치
+    const giraffes = [
+      ...makeCluster('giraffe', .18, .28, 4, .055, .075),
+      ...makeCluster('giraffe', .24, .50, 5, .060, .085),
+      ...makeCluster('giraffe', .31, .22, 4, .045, .060),
+      ...makeCluster('giraffe', .34, .42, 3, .050, .070)
+    ];
+
+    const monkeys = [
+      ...makeCluster('monkey', .42, .66, 4, .070, .075),
+      ...makeCluster('monkey', .50, .56, 5, .075, .080),
+      ...makeCluster('monkey', .57, .72, 4, .070, .075),
+      ...makeCluster('monkey', .61, .50, 4, .065, .075),
+      ...makeCluster('monkey', .47, .80, 2, .045, .050),
+      ...makeCluster('monkey', .20, .82, 5, .050, .055),
+      ...makeCluster('monkey', .27, .72, 3, .045, .050)
+    ];
+
+    const elephants = [
+      ...makeCluster('elephant', .66, .62, 4, .075, .080),
+      ...makeCluster('elephant', .74, .52, 4, .080, .085),
+      ...makeCluster('elephant', .81, .36, 4, .075, .080),
+      ...makeCluster('elephant', .86, .72, 3, .060, .070),
+      ...makeCluster('elephant', .71, .78, 3, .065, .075)
+    ];
+
+    animals = shuffle([...giraffes, ...monkeys, ...elephants]);
+    q=null;
+    updateAll();
+  }
+
+  function resize(){
+    const r=wrap.getBoundingClientRect();
+    cssW=r.width;cssH=r.height;
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=Math.round(cssW*dpr);canvas.height=Math.round(cssH*dpr);
+    canvas.style.width=cssW+'px';canvas.style.height=cssH+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    draw();
+  }
+
+  function px(p){return p.x*cssW}
+  function py(p){return p.y*cssH}
+
+  function computeNearest(point){
+    return animals.map((a,i)=>({a,i,d:Math.hypot(a.x-point.x,a.y-point.y)})).sort((x,y)=>x.d-y.d).slice(0,Number(slider.value));
+  }
+  function nearest(){
+    if(!q)return [];
+    return computeNearest(q);
+  }
+
+  function decideType(near){
+    const counts = { giraffe:0, elephant:0, monkey:0 };
+    const firstDist = { giraffe:Infinity, elephant:Infinity, monkey:Infinity };
+    near.forEach(n=>{
+      counts[n.a.type]++;
+      if(firstDist[n.a.type] === Infinity) firstDist[n.a.type] = n.d;
+    });
+    const ordered = Object.keys(counts).sort((a,b)=>{
+      if(counts[b] !== counts[a]) return counts[b]-counts[a];
+      return firstDist[a]-firstDist[b];
+    });
+    const topCount = counts[ordered[0]];
+    const ties = ordered.filter(t=>counts[t]===topCount);
+    return { winner: ordered[0], counts, tie: ties.length>1, ties };
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,cssW,cssH);
+    drawBackdrop();
+    const near=nearest();
+    if(q && near.length){
+      const far=near[near.length-1].d;
+      ctx.save();
+      ctx.strokeStyle='rgba(68,71,184,.25)';ctx.fillStyle='rgba(68,71,184,.06)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(px(q),py(q),far*Math.min(cssW,cssH),0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+      near.forEach((n,idx)=>{
+        ctx.save();
+        ctx.strokeStyle=idx===0?'rgba(41,44,110,.95)':'rgba(41,44,110,.68)';
+        ctx.lineWidth=idx===0?2.8:2;
+        ctx.beginPath();ctx.moveTo(px(q),py(q));ctx.lineTo(px(n.a),py(n.a));ctx.stroke();ctx.restore();
+      });
+    }
+    renderOverlay(near);
+  }
+
+  function drawBackdrop(){
+    ctx.save();
+    ctx.clearRect(0,0,cssW,cssH);
+    ctx.fillStyle='#eef4ff';
+    ctx.fillRect(0,0,cssW,cssH);
+    ctx.strokeStyle='rgba(255,255,255,.38)';
+    ctx.lineWidth=1;
+    for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(cssW*i/5,0);ctx.lineTo(cssW*i/5,cssH);ctx.stroke();}
+    for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(0,cssH*i/4);ctx.lineTo(cssW,cssH*i/4);ctx.stroke();}
+    ctx.restore();
+  }
+
+  function renderOverlay(near){
+    animalLayer.innerHTML='';
+    const nearSet = new Set(near.map(n=>n.i));
+
+    animals.forEach((a,i)=>{
+      const el=document.createElement('div');
+      el.className='animal-icon'+(nearSet.has(i)?' near':'');
+      el.style.left=(a.x*100)+'%';
+      el.style.top=(a.y*100)+'%';
+      el.textContent=animalsMeta[a.type].emoji;
+      el.setAttribute('aria-label',animalsMeta[a.type].label);
+      animalLayer.appendChild(el);
+    });
+
+    if(q){
+      const el=document.createElement('div');
+      el.className='q-icon';
+      el.style.left=(q.x*100)+'%';
+      el.style.top=(q.y*100)+'%';
+      el.innerHTML='<span>q</span><span class="q-k">k='+slider.value+'</span>';
+      animalLayer.appendChild(el);
+    }
+  }
+
+  function updatePanel(){
+    kValue.textContent='k = '+slider.value;
+    if(!q){
+      guide.style.display='block';resultMain.textContent='q점을 먼저 찍어주세요';
+      gVote.textContent='-';eVote.textContent='-';mVote.textContent='-';
+      neighborList.innerHTML='<div class="neighbor"><span class="left">q점을 찍으면 이웃 정보가 표시됩니다.</span></div>';
+      return;
+    }
+    guide.style.display='none';
+    const near=nearest();
+    const decided = decideType(near);
+    gVote.textContent=decided.counts.giraffe+'표';
+    eVote.textContent=decided.counts.elephant+'표';
+    mVote.textContent=decided.counts.monkey+'표';
+    const meta = animalsMeta[decided.winner];
+    resultMain.innerHTML=`<span class="animal">${meta.emoji}</span> ${meta.label}로 분류${decided.tie ? ' (동점 → 더 가까운 이웃 우선)' : ''}`;
+    neighborList.innerHTML=near.map((n,idx)=>{
+      const meta=animalsMeta[n.a.type];
+      return `<div class="neighbor"><span class="left"><span class="rank">${idx+1}</span><span>${meta.emoji} ${meta.label}</span></span><span class="dist">거리 ${n.d.toFixed(3)}</span></div>`;
+    }).join('');
+  }
+
+  function updateAll(){updatePanel();draw();}
+
+  function setQFromEvent(e){
+    const r=canvas.getBoundingClientRect();
+    const cx=e.touches?e.touches[0].clientX:e.clientX;
+    const cy=e.touches?e.touches[0].clientY:e.clientY;
+    q={x:clamp((cx-r.left)/r.width,.02,.98),y:clamp((cy-r.top)/r.height,.05,.95)};
+    updateAll();
+  }
+
+  async function captureGraph(){
+    const originalText = '📷 캡처하기';
+    try{
+      captureBtn.disabled = true;
+      captureBtn.textContent = '캡처 중...';
+
+      const guideDisplay = guide.style.display;
+      guide.style.display = 'none';
+
+      const shot = await html2canvas(wrap, {
+        backgroundColor: null,
+        scale: Math.max(2, window.devicePixelRatio || 1),
+        useCORS: true,
+        logging: false
+      });
+
+      guide.style.display = guideDisplay;
+
+      const blob = await new Promise((resolve, reject)=>{
+        shot.toBlob(b=> b ? resolve(b) : reject(new Error('이미지 변환 실패')), 'image/png');
+      });
+
+      if(!navigator.clipboard || !window.ClipboardItem){
+        throw new Error('이 브라우저는 이미지 클립보드 복사를 지원하지 않습니다.');
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+
+      captureBtn.textContent = '✓ 복사 완료!';
+      setTimeout(()=>{
+        captureBtn.textContent = originalText;
+        captureBtn.disabled = false;
+      }, 1400);
+    }catch(err){
+      console.error(err);
+      guide.style.display = q ? 'none' : 'block';
+      captureBtn.textContent = '복사 실패';
+      setTimeout(()=>{
+        captureBtn.textContent = originalText;
+        captureBtn.disabled = false;
+      }, 1600);
+    }
+  }
+
+  captureBtn.addEventListener('click', captureGraph);
+
+  canvas.addEventListener('click',setQFromEvent);
+  canvas.addEventListener('touchstart',e=>{setQFromEvent(e);e.preventDefault()},{passive:false});
+  slider.addEventListener('input',updateAll);
+  document.getElementById('regenBtn').addEventListener('click',generateAnimals);
+  document.getElementById('clearQBtn').addEventListener('click',()=>{q=null;updateAll()});
+  window.addEventListener('resize',resize);
+  window.addEventListener('DOMContentLoaded',()=>{generateAnimals();resize();});
+})();
+</script>
+</body>
+</html>

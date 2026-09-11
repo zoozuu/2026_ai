@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>K-평균 야구 선수 군집화 시뮬레이터</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --text:#17223b; --muted:#687791; --line:#dce4ef;
+    --c1:#e55353; --c2:#2f6fd6; --c3:#2e9a69; --accent:#2a8f7b; --neutral:#9aa7b8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif;background:linear-gradient(180deg,#f7f9fc,#eef3f8);color:var(--text)}
+  .wrap{max-width:1380px;margin:0 auto;padding:24px 18px 36px}
+  .hero{background:#eaf4f8;border:1px solid #d7eaf0;border-radius:24px;padding:22px 24px;margin-bottom:16px}
+  .hero-top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  h1{margin:0;font-size:clamp(1.75rem,3vw,2.55rem);line-height:1.2}
+  h1 span{color:var(--accent)}
+  .hero p{margin:8px 0 0;color:#52637c;line-height:1.6;max-width:950px}
+  .capture{margin-left:auto;align-self:center;border:0;border-radius:12px;padding:11px 16px;font-weight:800;background:#263a63;color:#fff;cursor:pointer;white-space:nowrap}
+  .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;min-width:0;align-items:center}
+  .step{background:#fff;border:1px solid #dce8ec;border-radius:999px;padding:9px 12px;font-size:.92rem;line-height:1.35;white-space:normal}
+  .note{margin-top:11px;color:#617188;font-size:.88rem;line-height:1.55}
+  .workspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:16px;align-items:start}
+  .card{background:var(--card);border:1px solid #e2e8f1;border-radius:20px;box-shadow:0 10px 26px rgba(35,52,83,.06)}
+  .chart-card{padding:16px}
+  .panel-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .panel-head h2{font-size:1.08rem;margin:0}.panel-head span{font-size:.9rem;color:var(--muted)}
+  #plotWrap{position:relative;width:100%;aspect-ratio:1.45/1;min-height:430px;border:1px solid #edf1f6;border-radius:16px;background:#fff;overflow:hidden}
+  #plot{width:100%;height:100%;display:block;touch-action:manipulation;cursor:default}
+  .emptyHint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:#8190a5;font-weight:800;pointer-events:none;transition:.2s}
+  .emptyHint.hide{opacity:0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:#5d6b83;font-size:.9rem}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .legend .star{font-size:1rem;color:#222;margin-right:4px}
+  .side{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .phase-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:6px 10px;border-radius:999px;background:#e8f4ef;color:#26765d;font-size:.82rem;font-weight:900}
+  .callout{background:#f8fbfe;border:1px solid #e3ebf4;border-radius:16px;padding:14px}
+  .callout h3{margin:0 0 8px;font-size:1rem}.callout p{margin:0;color:#5c6c84;line-height:1.55;font-size:.94rem}
+  .progress{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:10px}
+  .progressTrack{height:9px;border-radius:999px;background:#e9eef5;overflow:hidden}
+  .progressBar{height:100%;width:0;background:var(--accent);transition:width .28s ease}
+  .progressText{font-size:.88rem;color:#65758c;font-weight:800;white-space:nowrap}
+  .control-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button.action{border:0;border-radius:12px;padding:11px 12px;font-weight:800;cursor:pointer;background:#eaf0f8;color:#314766;min-height:44px}
+  button.action.primary{background:#2f6fd6;color:#fff}
+  button.action.green{background:#e8f4ef;color:#26765d}
+  button.action.warn{background:#fff4e7;color:#87611e}
+  button.action:disabled{opacity:.42;cursor:not-allowed}
+  .speedRow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .speedRow label{font-size:.9rem;color:#65758c;font-weight:800}
+  select{border:1px solid #dce4ef;border-radius:10px;padding:9px 34px 9px 11px;background:#fff;color:#30435f;font:inherit;font-size:.92rem}
+  .status{font-size:.92rem;line-height:1.62;color:#5f6f87;background:#f7f9fc;border-radius:13px;padding:12px;border:1px solid #e7ecf3;min-height:78px}
+  .status strong{color:#2d405e}
+  .experiment{border-top:1px solid #e8edf4;padding-top:12px}
+  .experiment.locked{opacity:.48}
+  .experiment h3{margin:0 0 7px;font-size:1rem}
+  .experiment p{margin:0 0 10px;color:#607088;line-height:1.55;font-size:.9rem}
+  .result{border-radius:16px;padding:14px;background:#fbfcff;border:1px solid #e3e9f2;min-height:128px}
+  .result .eyebrow{font-size:.82rem;color:#71819a;font-weight:800;margin-bottom:6px}
+  .result h3{margin:0 0 8px;font-size:1.15rem}
+  .dist-list{display:grid;gap:6px;margin-top:9px}
+  .dist-row{display:flex;justify-content:space-between;gap:12px;font-size:.9rem;padding:7px 9px;border-radius:10px;background:#fff;border:1px solid #edf1f6}
+  .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .mini{padding:10px;border-radius:12px;text-align:center;border:1px solid #e7edf5;background:#fff}
+  .mini .k{font-size:.8rem;color:#78879d}.mini .v{font-weight:900;font-size:1.15rem;margin-top:2px}
+  .toast{position:absolute;right:14px;top:14px;background:#17223b;color:#fff;padding:10px 13px;border-radius:11px;font-size:.88rem;opacity:0;transform:translateY(-6px);transition:.2s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+  @media(max-width:980px){.workspace{grid-template-columns:1fr}.capture{margin-left:0}#plotWrap{min-height:390px}}
+  @media(max-width:620px){.wrap{padding:12px}.hero{padding:17px}.steps{display:grid;grid-template-columns:1fr}.step{border-radius:12px}.control-grid{grid-template-columns:1fr}#plotWrap{min-height:330px;aspect-ratio:1.05/1}.mini-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <section class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>K-평균 <span>(야구 선수 세 그룹으로 군집화)</span></h1>
+        <p>처음에는 빈 그래프에서 시작합니다. 선수 데이터가 한 명씩 추가될 때마다 K-평균을 다시 적용해 <strong>군집의 색, 중심점 ★, 군집 영역이 어떻게 바뀌는지</strong> 관찰해 보세요.</p>
+      </div>
+      <button class="capture" id="captureBtn" type="button">📷 캡처하기</button>
+    </div>
+    <div class="steps">
+      <div class="step">① 선수 데이터가 하나씩 추가됩니다.</div>
+      <div class="step">② K=3의 중심점을 기준으로 가까운 데이터끼리 묶입니다.</div>
+      <div class="step">③ 데이터가 늘어날수록 중심점과 군집 영역이 바뀝니다.</div>
+      <div class="step">④ 시뮬레이션이 끝나면 직접 새 선수를 추가해 봅니다.</div>
+    </div>
+    <div class="note">※ 학습용 시뮬레이션으로, 새 선수가 추가될 때마다 현재까지 나타난 전체 데이터에 K-평균을 다시 적용하여 군집 변화를 보여줍니다.</div>
+  </section>
+
+  <div class="workspace">
+    <section class="card chart-card">
+      <div class="panel-head"><h2>선수 데이터 산점도</h2><span>X축: 타율 · Y축: 방어율 · K = 3</span></div>
+      <div id="plotWrap">
+        <canvas id="plot" aria-label="타율과 방어율을 나타낸 K-평균 군집화 산점도"></canvas>
+        <div class="emptyHint" id="emptyHint">▶ 시뮬레이션 시작을 누르면<br>선수 데이터가 하나씩 나타납니다.</div>
+        <div class="toast" id="toast">캡처 완료! Ctrl+V로 붙여넣으세요.</div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--neutral)"></i>새로 들어온 데이터</span>
+        <span><i style="background:var(--c1)"></i>군집 1</span>
+        <span><i style="background:var(--c2)"></i>군집 2</span>
+        <span><i style="background:var(--c3)"></i>군집 3</span>
+        <span><span class="star">★</span>군집 중심점</span>
+        <span>◎ 직접 추가한 선수</span>
+      </div>
+    </section>
+
+    <aside class="card side">
+      <div class="phase-badge" id="phaseBadge">1단계 · 시뮬레이션</div>
+
+      <div class="callout">
+        <h3>군집이 만들어지는 과정 관찰</h3>
+        <p id="simGuide">빈 그래프에서 시작합니다. 자동 재생 또는 다음 선수 +1로 선수 데이터가 추가되는 과정을 관찰하세요.</p>
+        <div class="progress">
+          <div class="progressTrack"><div class="progressBar" id="progressBar"></div></div>
+          <div class="progressText" id="progressText">0 / 17</div>
+        </div>
+      </div>
+
+      <div class="control-grid">
+        <button class="action primary" id="playBtn" type="button">▶ 시뮬레이션 시작</button>
+        <button class="action" id="nextBtn" type="button">+ 다음 선수 1명</button>
+        <button class="action warn" id="pauseBtn" type="button" disabled>Ⅱ 일시정지</button>
+        <button class="action" id="restartBtn" type="button">↺ 처음부터</button>
+      </div>
+
+      <div class="speedRow">
+        <label for="speedSelect">재생 속도</label>
+        <select id="speedSelect">
+          <option value="1900">느리게</option>
+          <option value="1200" selected>보통</option>
+          <option value="700">빠르게</option>
+        </select>
+      </div>
+
+      <div class="status" id="statusBox"><strong>시작 전</strong><br>아직 선수 데이터가 없습니다. 데이터가 추가되면서 군집이 어떻게 생기는지 살펴보세요.</div>
+
+      <div class="mini-grid">
+        <div class="mini"><div class="k">군집 1</div><div class="v" id="count1">0</div></div>
+        <div class="mini"><div class="k">군집 2</div><div class="v" id="count2">0</div></div>
+        <div class="mini"><div class="k">군집 3</div><div class="v" id="count3">0</div></div>
+      </div>
+
+      <div class="experiment locked" id="experimentPanel">
+        <h3>2단계 · 직접 선수 데이터 추가</h3>
+        <p id="experimentGuide">시뮬레이션을 끝까지 완료하면 그래프를 클릭해 직접 새 선수 데이터를 추가할 수 있습니다.</p>
+        <div class="result" id="resultBox">
+          <div class="eyebrow">직접 실습</div>
+          <h3>아직 잠겨 있습니다.</h3>
+          <div style="font-size:.9rem;color:#687791;line-height:1.5">먼저 17명의 선수 데이터가 모두 나타나는 시뮬레이션을 완료하세요.</div>
+        </div>
+        <div class="control-grid" style="margin-top:10px">
+          <button class="action green" id="updateBtn" type="button" disabled>★ 중심점 다시 계산</button>
+          <button class="action" id="undoBtn" type="button" disabled>↶ 마지막 점 취소</button>
+          <button class="action" id="clearBtn" type="button" disabled>추가한 점 지우기</button>
+          <button class="action primary" id="resultResetBtn" type="button" disabled>시뮬레이션 결과로</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const root=document.getElementById('app'); if(root.dataset.ready) return; root.dataset.ready='1';
+  const canvas=root.querySelector('#plot'), ctx=canvas.getContext('2d'), plotWrap=root.querySelector('#plotWrap');
+  const statusBox=root.querySelector('#statusBox'), resultBox=root.querySelector('#resultBox'), toast=root.querySelector('#toast');
+  const emptyHint=root.querySelector('#emptyHint'), progressBar=root.querySelector('#progressBar'), progressText=root.querySelector('#progressText');
+  const playBtn=root.querySelector('#playBtn'), nextBtn=root.querySelector('#nextBtn'), pauseBtn=root.querySelector('#pauseBtn'), speedSelect=root.querySelector('#speedSelect');
+  const experimentPanel=root.querySelector('#experimentPanel'), phaseBadge=root.querySelector('#phaseBadge');
+  const updateBtn=root.querySelector('#updateBtn'), undoBtn=root.querySelector('#undoBtn'), clearBtn=root.querySelector('#clearBtn'), resultResetBtn=root.querySelector('#resultResetBtn');
+
+  const XMIN=0, XMAX=.45, YMIN=0, YMAX=5;
+  const colors=['#e55353','#2f6fd6','#2e9a69'], neutral='#9aa7b8';
+  // 첫 3개는 서로 다른 자연스러운 영역에서 시작하도록 배치해 K=3의 초기 중심점 역할을 하게 함.
+  const data=[
+    {x:.145,y:2.41,label:'중간'}, {x:.33,y:4.08,label:'타자'}, {x:.17,y:.12,label:'선발'},
+    {x:.12,y:2.43,label:'중간'}, {x:.29,y:4.12,label:'타자'}, {x:.18,y:1.30,label:'마무리'},
+    {x:.16,y:3.10,label:'중간'}, {x:.35,y:2.22,label:'타자'}, {x:.14,y:2.42,label:'중간'},
+    {x:.30,y:3.00,label:'타자'}, {x:.19,y:2.23,label:'중간'}, {x:.39,y:4.31,label:'타자'},
+    {x:.22,y:2.38,label:'중간'}, {x:.26,y:3.10,label:'타자'}, {x:.275,y:4.02,label:'타자'},
+    {x:.30,y:2.12,label:'타자'}, {x:.36,y:4.12,label:'타자'}
+  ];
+
+  let visibleCount=0, centroids=[], assignments=[], extras=[], extraAssignments=[];
+  let playing=false, timer=null, busy=false, complete=false, newestIndex=-1, newestNeutral=false, lastAdded=null;
+
+  const pad={l:62,r:26,t:30,b:54};
+  function sx(x,w){return pad.l+(x-XMIN)/(XMAX-XMIN)*(w-pad.l-pad.r)}
+  function sy(y,h){return h-pad.b-(y-YMIN)/(YMAX-YMIN)*(h-pad.t-pad.b)}
+  function invX(px,w){return XMIN+(px-pad.l)/(w-pad.l-pad.r)*(XMAX-XMIN)}
+  function invY(py,h){return YMIN+((h-pad.b-py)/(h-pad.t-pad.b))*(YMAX-YMIN)}
+  function distance(a,b){const dx=(a.x-b.x)/(XMAX-XMIN),dy=(a.y-b.y)/(YMAX-YMIN);return Math.hypot(dx,dy)}
+  function nearest(pt,cents=centroids){let k=0,best=Infinity;const ds=cents.map((c,i)=>{const d=distance(pt,c);if(d<best){best=d;k=i}return d});return {k,ds}}
+
+  function runKMeans(points,start){
+    let cents=start.map(c=>({...c}));
+    let ass=new Array(points.length).fill(0), prev='';
+    for(let iter=0;iter<30;iter++){
+      ass=points.map(p=>nearest(p,cents).k);
+      const key=ass.join(',');
+      const next=cents.map((c,k)=>{
+        const group=points.filter((_,i)=>ass[i]===k);
+        if(!group.length) return {...c};
+        return {x:group.reduce((s,p)=>s+p.x,0)/group.length,y:group.reduce((s,p)=>s+p.y,0)/group.length};
+      });
+      cents=next;
+      if(key===prev) break; prev=key;
+    }
+    ass=points.map(p=>nearest(p,cents).k);
+    return {centroids:cents,assignments:ass};
+  }
+
+  function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`}
+
+  function resize(){
+    const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1)), r=plotWrap.getBoundingClientRect();
+    canvas.width=Math.round(r.width*dpr);canvas.height=Math.round(r.height*dpr);canvas.style.width=r.width+'px';canvas.style.height=r.height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);draw();
+  }
+
+  function drawRegions(w,h){
+    if(centroids.length!==3) return;
+    const cols=38,rows=30,cw=(w-pad.l-pad.r)/cols,ch=(h-pad.t-pad.b)/rows;
+    for(let i=0;i<cols;i++) for(let j=0;j<rows;j++){
+      const x=XMIN+(i+.5)/cols*(XMAX-XMIN), y=YMAX-(j+.5)/rows*(YMAX-YMIN), k=nearest({x,y}).k;
+      ctx.fillStyle=rgba(colors[k],.055);ctx.fillRect(pad.l+i*cw,pad.t+j*ch,cw+1,ch+1);
+    }
+  }
+
+  function draw(){
+    const r=plotWrap.getBoundingClientRect(),w=r.width,h=r.height;
+    ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+    drawRegions(w,h);
+    ctx.strokeStyle='#e6ebf2';ctx.lineWidth=1;ctx.font='12px system-ui';ctx.fillStyle='#64748b';ctx.textAlign='center';ctx.textBaseline='top';
+    for(let x=0;x<=.4501;x+=.05){const px=sx(x,w);ctx.beginPath();ctx.moveTo(px,pad.t);ctx.lineTo(px,h-pad.b);ctx.stroke();ctx.fillText(x===0?'0':x.toFixed(2).replace(/0$/,''),px,h-pad.b+9)}
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    for(let y=0;y<=5.001;y+=.5){const py=sy(y,h);ctx.beginPath();ctx.moveTo(pad.l,py);ctx.lineTo(w-pad.r,py);ctx.stroke();ctx.fillText(Number.isInteger(y)?String(y):y.toFixed(1),pad.l-9,py)}
+    ctx.strokeStyle='#77859a';ctx.lineWidth=1.5;ctx.strokeRect(pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);
+    ctx.fillStyle='#32435d';ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.font='14px system-ui';ctx.fillText('타율',pad.l+(w-pad.l-pad.r)/2,h-12);
+    ctx.save();ctx.translate(18,pad.t+(h-pad.t-pad.b)/2);ctx.rotate(-Math.PI/2);ctx.fillText('방어율',0,0);ctx.restore();
+
+    // 직접 추가한 마지막 점과 중심점 사이 거리
+    if(lastAdded && complete && centroids.length===3){
+      const np=nearest(lastAdded);
+      centroids.forEach((c,i)=>{ctx.save();ctx.setLineDash(i===np.k?[]:[5,5]);ctx.strokeStyle=i===np.k?colors[i]:'#aab5c5';ctx.lineWidth=i===np.k?2.4:1.1;ctx.beginPath();ctx.moveTo(sx(lastAdded.x,w),sy(lastAdded.y,h));ctx.lineTo(sx(c.x,w),sy(c.y,h));ctx.stroke();ctx.restore()});
+    }
+
+    for(let i=0;i<visibleCount;i++){
+      const pt=data[i],x=sx(pt.x,w),y=sy(pt.y,h);let fill=neutral;
+      if(!(newestNeutral&&i===newestIndex) && assignments[i]!==undefined) fill=colors[assignments[i]];
+      ctx.beginPath();ctx.arc(x,y,i===newestIndex?7:5,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
+      if(i===newestIndex){ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke()}
+    }
+
+    extras.forEach((pt,i)=>{const x=sx(pt.x,w),y=sy(pt.y,h),k=extraAssignments[i]??nearest(pt).k;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fillStyle=colors[k];ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle='#111827';ctx.stroke()});
+
+    centroids.forEach((c,i)=>{const x=sx(c.x,w),y=sy(c.y,h);ctx.save();ctx.translate(x,y);ctx.font='bold 25px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='#fff';ctx.strokeText('★',0,0);ctx.fillStyle='#111827';ctx.fillText('★',0,0);ctx.restore();ctx.fillStyle=colors[i];ctx.font='bold 12px system-ui';ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText('군집 '+(i+1),x+12,y-8)});
+  }
+
+  function updateCounts(){
+    const cnt=[0,0,0];assignments.forEach(k=>{if(k!==undefined)cnt[k]++});extraAssignments.forEach(k=>cnt[k]++);
+    cnt.forEach((n,i)=>root.querySelector('#count'+(i+1)).textContent=n);
+  }
+  function updateProgress(){const pct=visibleCount/data.length*100;progressBar.style.width=pct+'%';progressText.textContent=`${visibleCount} / ${data.length}`;emptyHint.classList.toggle('hide',visibleCount>0)}
+  function setStatus(title,body){statusBox.innerHTML=`<strong>${title}</strong><br>${body}`}
+
+  function animateCentroids(from,to,duration=650){
+    return new Promise(resolve=>{
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){centroids=to.map(c=>({...c}));draw();resolve();return}
+      const start=performance.now();
+      function frame(now){const t=Math.min(1,(now-start)/duration),e=1-Math.pow(1-t,3);centroids=to.map((c,i)=>({x:from[i].x+(c.x-from[i].x)*e,y:from[i].y+(c.y-from[i].y)*e}));
+        if(visibleCount>=3){assignments=data.slice(0,visibleCount).map(p=>nearest(p).k)} draw(); if(t<1)requestAnimationFrame(frame);else resolve();}
+      requestAnimationFrame(frame);
+    });
+  }
+
+  async function addNext(){
+    if(busy||complete) return; busy=true;
+    if(visibleCount>=data.length){finishSimulation();busy=false;return}
+    newestIndex=visibleCount;visibleCount++;newestNeutral=true;updateProgress();draw();
+    const pt=data[newestIndex];
+    setStatus(`선수 ${visibleCount}명째 추가`,`새 데이터가 타율 ${pt.x.toFixed(3)}, 방어율 ${pt.y.toFixed(2)} 위치에 나타났습니다. 이제 현재 데이터에 K-평균을 적용합니다.`);
+    await new Promise(r=>setTimeout(r,360));
+
+    if(visibleCount<3){
+      assignments=new Array(visibleCount).fill(undefined);newestNeutral=false;
+      setStatus('초기 데이터 모으는 중',`K=3이므로 먼저 서로 다른 세 영역에서 초기 중심점이 될 데이터 3개가 필요합니다. 현재 ${visibleCount}개가 나타났습니다.`);draw();
+    }else if(visibleCount===3){
+      centroids=data.slice(0,3).map(p=>({x:p.x,y:p.y}));assignments=[0,1,2];newestNeutral=false;updateCounts();
+      setStatus('K=3의 초기 중심점 생성','세 데이터의 위치에서 ★ 중심점 3개가 만들어졌습니다. 이제 새 선수가 추가될 때마다 가까운 중심으로 묶이고 중심점이 다시 이동합니다.');draw();
+    }else{
+      const points=data.slice(0,visibleCount),from=centroids.map(c=>({...c}));
+      const result=runKMeans(points,from);newestNeutral=false;
+      setStatus('군집 다시 계산 중','새 데이터를 포함해 가까운 중심점끼리 다시 묶고, 각 군집의 평균 위치로 ★ 중심점을 이동합니다.');
+      await animateCentroids(from,result.centroids,720);centroids=result.centroids;assignments=result.assignments;updateCounts();draw();
+      const k=assignments[newestIndex];setStatus(`군집 ${k+1}에 배정`,`새 데이터가 추가되면서 중심점과 색으로 표시된 군집 영역이 다시 계산되었습니다. 이전 데이터의 군집도 함께 달라질 수 있습니다.`);
+    }
+    updateCounts();
+    if(visibleCount>=data.length) finishSimulation();
+    busy=false;
+  }
+
+  function scheduleNext(){
+    clearTimeout(timer);if(!playing||complete)return;
+    timer=setTimeout(async()=>{await addNext();if(playing&&!complete)scheduleNext()},Number(speedSelect.value));
+  }
+  function play(){
+    if(complete)return;playing=true;playBtn.textContent='▶ 자동 재생 중';playBtn.disabled=true;pauseBtn.disabled=false;nextBtn.disabled=true;
+    if(visibleCount===0)addNext().then(()=>scheduleNext());else scheduleNext();
+  }
+  function pause(){playing=false;clearTimeout(timer);playBtn.textContent=visibleCount?'▶ 계속 재생':'▶ 시뮬레이션 시작';playBtn.disabled=false;pauseBtn.disabled=true;nextBtn.disabled=false}
+
+  function finishSimulation(){
+    complete=true;playing=false;clearTimeout(timer);playBtn.textContent='✓ 시뮬레이션 완료';playBtn.disabled=true;pauseBtn.disabled=true;nextBtn.disabled=true;
+    newestIndex=-1;newestNeutral=false;phaseBadge.textContent='2단계 · 직접 실습 가능';experimentPanel.classList.remove('locked');
+    [updateBtn,undoBtn,clearBtn,resultResetBtn].forEach(b=>b.disabled=false);canvas.style.cursor='crosshair';
+    root.querySelector('#experimentGuide').innerHTML='이제 그래프를 클릭해 <strong>새 선수 데이터</strong>를 직접 추가해 보세요. 현재 중심점과 가장 가까운 군집에 자동 배정됩니다.';
+    resultBox.innerHTML='<div class="eyebrow">직접 실습 시작</div><h3>그래프의 원하는 위치를 클릭하세요.</h3><div style="font-size:.9rem;color:#687791;line-height:1.5">추가한 점은 검은 테두리로 표시됩니다. 두 군집의 경계 부근에도 찍어 보세요.</div>';
+    setStatus('시뮬레이션 완료','17명의 데이터가 모두 나타났습니다. 이제 직접 새로운 선수를 추가하면서 어느 군집에 들어가는지 확인해 보세요.');draw();
+  }
+
+  function restart(){
+    playing=false;clearTimeout(timer);busy=false;complete=false;visibleCount=0;centroids=[];assignments=[];extras=[];extraAssignments=[];newestIndex=-1;newestNeutral=false;lastAdded=null;
+    playBtn.textContent='▶ 시뮬레이션 시작';playBtn.disabled=false;pauseBtn.disabled=true;nextBtn.disabled=false;phaseBadge.textContent='1단계 · 시뮬레이션';experimentPanel.classList.add('locked');
+    [updateBtn,undoBtn,clearBtn,resultResetBtn].forEach(b=>b.disabled=true);canvas.style.cursor='default';
+    root.querySelector('#experimentGuide').textContent='시뮬레이션을 끝까지 완료하면 그래프를 클릭해 직접 새 선수 데이터를 추가할 수 있습니다.';
+    resultBox.innerHTML='<div class="eyebrow">직접 실습</div><h3>아직 잠겨 있습니다.</h3><div style="font-size:.9rem;color:#687791;line-height:1.5">먼저 17명의 선수 데이터가 모두 나타나는 시뮬레이션을 완료하세요.</div>';
+    setStatus('시작 전','아직 선수 데이터가 없습니다. 데이터가 추가되면서 군집이 어떻게 생기는지 살펴보세요.');updateCounts();updateProgress();draw();
+  }
+
+  function showManualResult(pt){
+    const {k,ds}=nearest(pt);resultBox.innerHTML=`<div class="eyebrow">최근 추가한 선수</div><h3>군집 ${k+1}에 배정되었습니다.</h3><div style="font-size:.94rem;color:#52637c">타율 <strong>${pt.x.toFixed(3)}</strong> · 방어율 <strong>${pt.y.toFixed(2)}</strong></div><div class="dist-list">${ds.map((d,i)=>`<div class="dist-row" style="${i===k?'border-color:'+colors[i]+';background:'+rgba(colors[i],.06):''}"><span>군집 ${i+1} 중심까지</span><strong>${d.toFixed(3)}</strong></div>`).join('')}</div>`;
+    setStatus(`직접 추가한 선수 → 군집 ${k+1}`,`세 중심점까지의 거리를 비교했을 때 군집 ${k+1}의 중심점이 가장 가깝습니다.`);
+  }
+
+  canvas.addEventListener('click',ev=>{
+    if(!complete)return;const rect=canvas.getBoundingClientRect(),r=plotWrap.getBoundingClientRect(),w=r.width,h=r.height,px=ev.clientX-rect.left,py=ev.clientY-rect.top;
+    if(px<pad.l||px>w-pad.r||py<pad.t||py>h-pad.b)return;
+    const pt={x:Math.max(XMIN,Math.min(XMAX,invX(px,w))),y:Math.max(YMIN,Math.min(YMAX,invY(py,h)))};extras.push(pt);lastAdded=pt;extraAssignments.push(nearest(pt).k);updateCounts();showManualResult(pt);draw();
+  });
+
+  updateBtn.addEventListener('click',()=>{
+    if(!complete)return;const points=[...data,...extras],start=centroids.map(c=>({...c}));const res=runKMeans(points,start);centroids=res.centroids;assignments=res.assignments.slice(0,data.length);extraAssignments=res.assignments.slice(data.length);updateCounts();if(lastAdded)showManualResult(lastAdded);setStatus('중심점 갱신 완료','직접 추가한 데이터까지 포함해 K-평균을 다시 적용했습니다. ★ 중심점과 군집 영역이 어떻게 이동했는지 확인해 보세요.');draw();
+  });
+  undoBtn.addEventListener('click',()=>{if(!extras.length)return;extras.pop();extraAssignments.pop();lastAdded=extras.at(-1)||null;updateCounts();if(lastAdded)showManualResult(lastAdded);else resultBox.innerHTML='<div class="eyebrow">직접 실습</div><h3>추가한 선수가 없습니다.</h3><div style="font-size:.9rem;color:#687791">그래프를 클릭해 다시 추가해 보세요.</div>';draw()});
+  clearBtn.addEventListener('click',()=>{extras=[];extraAssignments=[];lastAdded=null;updateCounts();resultBox.innerHTML='<div class="eyebrow">직접 실습</div><h3>추가한 점을 모두 지웠습니다.</h3><div style="font-size:.9rem;color:#687791">시뮬레이션으로 만들어진 17개 데이터는 그대로 유지됩니다.</div>';setStatus('직접 추가한 데이터 삭제','시뮬레이션 결과는 그대로 두고, 직접 추가했던 선수 데이터만 제거했습니다.');draw()});
+  resultResetBtn.addEventListener('click',()=>{extras=[];extraAssignments=[];lastAdded=null;const res=runKMeans(data,data.slice(0,3));centroids=res.centroids;assignments=res.assignments;updateCounts();resultBox.innerHTML='<div class="eyebrow">직접 실습</div><h3>시뮬레이션 완료 상태로 돌아왔습니다.</h3><div style="font-size:.9rem;color:#687791">그래프를 클릭해 새로운 실험을 시작하세요.</div>';setStatus('시뮬레이션 결과 복원','직접 추가한 데이터와 그로 인한 중심점 변화를 모두 되돌렸습니다.');draw()});
+
+  playBtn.addEventListener('click',play);pauseBtn.addEventListener('click',pause);nextBtn.addEventListener('click',()=>{if(!busy&&!complete)addNext()});root.querySelector('#restartBtn').addEventListener('click',restart);
+  speedSelect.addEventListener('change',()=>{if(playing)scheduleNext()});
+
+  root.querySelector('#captureBtn').addEventListener('click',()=>{
+    try{canvas.toBlob(async blob=>{if(!blob)return;if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);toast.textContent='캡처 완료! Ctrl+V로 붙여넣으세요.'}else toast.textContent='이 브라우저에서는 이미지 복사를 지원하지 않습니다.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000)},'image/png')}catch(e){toast.textContent='이미지 복사 권한을 확인해 주세요.';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}});
+
+  const ro=new ResizeObserver(resize);ro.observe(plotWrap);updateProgress();updateCounts();resize();
+})();
+</script>
+</body>
+</html>
